@@ -1,0 +1,6 @@
+cat .gitignore
+*.pyc
+*.bash_history
+.ipython/
+.matplotlib/
+.spyder-py3/
