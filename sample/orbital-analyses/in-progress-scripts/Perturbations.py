@@ -6,9 +6,9 @@ import pickle
 from poliastro.twobody.perturbations import atmospheric_drag
 from poliastro.twobody.perturbations import J2_perturbation
 
-from Orbital_Analyses.Transform_Coordinate import ECFixed2Geodetic
-from Orbital_Analyses.Transform_Coordinate import J20002FK5_ECFixed
-from Orbital_Analyses.Transform_Coordinate import Geodetic2Geocentric
+from orbital_analyses.Transform_Coordinate import ECFixed2Geodetic
+from orbital_analyses.Transform_Coordinate import J20002FK5_ECFixed
+from orbital_analyses.Transform_Coordinate import Geodetic2Geocentric
 
 
 # DONT KNOW WHAT REFERENCE FRAME THIS IS IN
@@ -78,14 +78,14 @@ def Earth_Gravity(eg_rad, eg_vel, eg_GD):
     eg_dif = np.asmatrix(np.zeros((201, 1), dtype=np.float))
 
     # Calculate eg_u for each step and substitute into general formulas
-    with open('Orbital_Analyses/General_FNALFs/DO_200', 'rb') as fp:
+    with open('orbital_analyses/General_FNALFs/DO_200', 'rb') as fp:
         DO_200 = pickle.load(fp)
-    with open('Orbital_Analyses/General_FNALFs/DO_200_dif', 'rb') as fp:
+    with open('orbital_analyses/General_FNALFs/DO_200_dif', 'rb') as fp:
         DO_200_dif = pickle.load(fp)
     FNALF_200 = DO_200[-201:]
     FNALF_200_dif = DO_200_dif[-201:]
 
-    EGM2008_200 = np.load('Orbital_Analyses/EGM2008_200.npy')
+    EGM2008_200 = np.load('orbital_analyses/EGM2008_200.npy')
     C_nm = np.transpose(np.asmatrix(EGM2008_200[:, 2]))
     S_nm = np.transpose(np.asmatrix(EGM2008_200[:, 3]))
     C_nm = C_nm[-201:, 0].copy()

@@ -6,7 +6,7 @@ from parts_list import Parts_List
 from Operational_Analyses import State_Determine
 from Operational_Analyses import Power_Consume, Total_Volume, Total_Mass
 
-from Orbital_Analyses import u
+from orbital_analyses import u
 
 # Spacecraft State: lists operational conditions of subsystems/components
 

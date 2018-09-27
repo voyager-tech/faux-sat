@@ -1,8 +1,8 @@
 # Utilized Modules
 import numpy as np
-from Orbital_Analyses import u
+from orbital_analyses import u
 # from parts_list import Parts_List
-from Orbital_Analyses.Transform_State import Gregorian2JD
+from orbital_analyses.Transform_State import Gregorian2JD
 
 # TODO: Add uncertainties in with pint
 # import uncertainties
@@ -82,7 +82,7 @@ ex_GS = np.matrix([[ex_gs_ll], [ex_gs_a]])
 
 # Target Requirements
 # Define path that encircles california through lat/lon coordinates
-Target = np.load('Orbital_Analyses/CA_Coords.npy')
+Target = np.load('orbital_analyses/CA_Coords.npy')
 
 # Subsystem Requirements
 ###############################################################################

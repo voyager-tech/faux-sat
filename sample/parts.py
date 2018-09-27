@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 # This file will contain the parts that will be added to the parts list
-from Orbital_Analyses import u
+from orbital_analyses import u
 
 # Link to component data:
 # https://docs.google.com/spreadsheets/d/1xwS2TIb4rqCcBVCQWCefzTvZD81DcXGUuBUhLh0Eu4M/edit#gid=64952105

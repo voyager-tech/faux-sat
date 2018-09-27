@@ -1,8 +1,8 @@
 # Utilized Modules
 import numpy as np
 
-from Orbital_Analyses.Transform_State import TimeAdjust
-from Orbital_Analyses.Transform_Coordinate import FK5_Precession
+from orbital_analyses.Transform_State import TimeAdjust
+from orbital_analyses.Transform_Coordinate import FK5_Precession
 # Sun Position Vector Determination
 
 

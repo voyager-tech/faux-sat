@@ -1,10 +1,10 @@
 # Utilized Modules
 import numpy as np
-from Orbital_Analyses import u
+from orbital_analyses import u
 from copy import deepcopy as dc
 import Requirements as Req
 
-from Orbital_Analyses.Transform_State import Gregorian2JD
+from orbital_analyses.Transform_State import Gregorian2JD
 
 # Constants
 E_Rad = 6378.137            # Earth Radius (km))

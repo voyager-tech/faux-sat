@@ -2,7 +2,7 @@
 from parts_list import Parts_List
 import numpy as np
 import Requirements as Req
-from Orbital_Analyses import u
+from orbital_analyses import u
 
 
 # Spacecraft State per step

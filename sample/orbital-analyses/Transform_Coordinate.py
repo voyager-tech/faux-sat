@@ -2,7 +2,7 @@
 import numpy as np
 from copy import deepcopy as dc
 
-from Orbital_Analyses.Transform_State import TimeAdjust
+from orbital_analyses.Transform_State import TimeAdjust
 
 # ********************** Coordinate Reference Sheet **********************
 # *** Earth Based Systems ***
@@ -355,7 +355,7 @@ def FK5_SiderealTime(rad, vel, gd_UTC):
     if theta_d > 0:
         theta_gmst = theta_d  # Degrees
 
-    Nutation = np.load('Orbital_Analyses/Nutation.npy')
+    Nutation = np.load('orbital_analyses/Nutation.npy')
 
     # Need to calculate with sum on pg. 226
 
@@ -459,7 +459,7 @@ def FK5_Nutation(rad, vel, gd_UTC):
     jd_UTC, jd_UT1, jd_TAI, jd_TT = TimeAdjust(gd_UTC)
     T_TT = ((jd_TT - 2451545.0) / 36525)
 
-    Nutation = np.load('Orbital_Analyses/Nutation.npy')
+    Nutation = np.load('orbital_analyses/Nutation.npy')
 
     # These from IERS Earth Orientation Data - EOP 14 C04 (IAU2000A) - Latest
     # https://datacenter.iers.org/eop/-/somos/5Rgv/latest/223
@@ -683,7 +683,7 @@ def FK5_Nutation_T(rad, vel, gd_UTC):
     jd_UTC, jd_UT1, jd_TAI, jd_TT = TimeAdjust(gd_UTC)
     T_TT = ((jd_TT - 2451545.0) / 36525)
 
-    Nutation = np.load('Orbital_Analyses/Nutation.npy')
+    Nutation = np.load('orbital_analyses/Nutation.npy')
 
     # These from IERS Earth Orientation Data - EOP 14 C04 (IAU2000A) - Latest
     # https://datacenter.iers.org/eop/-/somos/5Rgv/latest/223
@@ -820,7 +820,7 @@ def FK5_SiderealTime_T(rad, vel, gd_UTC):
     if theta_d > 0:
         theta_gmst = theta_d  # Deg
 
-    Nutation = np.load('Orbital_Analyses/Nutation.npy')
+    Nutation = np.load('orbital_analyses/Nutation.npy')
 
     # Need to calculate with sum on pg. 226
 

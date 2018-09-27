@@ -7,9 +7,9 @@ from astropy import units as uu
 from datetime import datetime, timedelta
 
 # Utilized Scripts
-from Orbital_Analyses.Transform_State import Gregorian2JD
+from orbital_analyses.Transform_State import Gregorian2JD
 
-from Orbital_Analyses import u
+from orbital_analyses import u
 
 
 def Prop_Cowell(rad, vel, time, step, Ssize):
