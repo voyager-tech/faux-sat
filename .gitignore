@@ -1,6 +1,8 @@
 cat .gitignore
 *.pyc
 *.bash_history
+*.gitconfig
+.ssh/
 .ipython/
 .matplotlib/
 .spyder-py3/
