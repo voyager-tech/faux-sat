@@ -351,12 +351,12 @@ def IAU_ERotationAngle(rad_tirs, vel_tirs, gd_UTC, Transpose):
     # Apply Transform based on Transpose value (Forward or Backward Transform)
     if Transpose == 0:
         rad_cirs = (R * rad_tirs)
-        vel_cirs = ((R * vel_tirs) +
-                    np.transpose(np.cross(E_w, np.transpose(rad_tirs))))
+        vel_cirs = (R * (vel_tirs +
+                    np.transpose(np.cross(E_w, np.transpose(rad_tirs)))))
     elif Transpose == 1:
         rad_cirs = (np.transpose(R) * rad_tirs)
-        vel_cirs = (np.transpose(R) * vel_tirs -
-                    np.transpose(np.cross(E_w, np.transpose(rad_tirs))))
+        vel_cirs = (np.transpose(R) * (vel_tirs -
+                    np.transpose(np.cross(E_w, np.transpose(rad_tirs)))))
     return rad_cirs, vel_cirs
 
 
