@@ -194,7 +194,43 @@ def Geodetic2Geocentric(lla_D):
 
 
 def IAU_PolarMotion(rad_itrf, vel_itrf, gd_UTC, Transpose):
+    """
+    Transforms vectors from ITRF to TIRS system following IAU-2010 conventions
+
+    Parameters
+    ----------
+    rad_itrf : numpy matrix [3, 1] - [[X], [Y], [Z]]
+        - Radius vector components defined in kilometers in the ITRF frame
+    vel_itrf : numpy matrix [3, 1] - [[VX], [VY], [VZ]]
+        - Velocity vector components defined in kilometers in the ITRF frame
+    gd_UTC : numpy matrix [6, 1] - [[Yr], [Mo], [Day], [Hr], [Min], [Sec]]
+        - Gregorian Date
+    Transpose : int of 0 or 1
+        - Determines wether the transform is itrf->tirs (0) or tirs->itrf (1)
+
+    Returns
+    -------
+    rad_tirs : numpy matrix [3, 1] - [[X], [Y], [Z]]
+        - Radius vector components defined in kilometers in the TIRS frame
+    vel_tirs : numpy matrix [3, 1] - [[VX], [VY], [VZ]]
+        - Velocity vector components defined in kilometers in the TIRS frame
+
+    See Also
+    --------
+    FK5_PolarMotion : Transform to the PEF reference frame isung the
+    IAU-76/FK5 reduction
+
+    References
+    ----------
+    [1] D. Vallado, `Fundamentals of Astrodynamics and Applications`. 4th ed.,
+    Microcosm Press, 2013.
+        - Pg. 212
+    """
     # Polar Motion (IAU-2006/2000, CIO Based) ITFR -> TIRS, Vallado Pg. 212
+
+    # Raise errors before running script
+    while Transpose not in [0, 1]:
+        raise RuntimeError("Enter an int of 0; or 1 for the reverse transform")
 
     # Time Adjustments
     jd_UTC, jd_UT1, jd_TAI, jd_TT = TimeAdjust(gd_UTC)
@@ -206,6 +242,7 @@ def IAU_PolarMotion(rad_itrf, vel_itrf, gd_UTC, Transpose):
 
     # These from IERS Earth Orientation Data - EOP 14 C04 (IAU2000A) - Latest
     # https://datacenter.iers.org/eop/-/somos/5Rgv/latest/223
+    # find way to get site data and store it for entirety of the scipt run then delete afterwords
     Xp = np.deg2rad(-0.140682 * (1 / 3600))  # Sexagesimal-sec -> Radians # TODO: Replace with date specific data
     Yp = np.deg2rad(0.333309 * (1 / 3600))  # Sexagesimal-sec -> Radians # TODO: Replace with date specific data
 
@@ -236,8 +273,6 @@ def IAU_PolarMotion(rad_itrf, vel_itrf, gd_UTC, Transpose):
     elif Transpose == 1:
         rad_tirs = (np.transpose(W) * rad_itrf)
         vel_tirs = (np.transpose(W) * vel_itrf)
-    else:
-        raise RuntimeError("Enter an int of 0, or 1 for the reverse transform")
     return rad_tirs, vel_tirs
 
 
