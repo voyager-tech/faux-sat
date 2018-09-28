@@ -317,6 +317,10 @@ def IAU_ERotationAngle(rad_tirs, vel_tirs, gd_UTC, Transpose):
     """
     # Earth Rotation Angle (IAU-2006/2000, CIO Based) TIRS -> CIRS, Pg. 212
 
+    # Raise errors before running script
+    while Transpose not in [0, 1]:
+        raise RuntimeError("Enter an int of 0; or 1 for the reverse transform")
+
     # Time Adjustments
     jd_UTC, jd_UT1, jd_TAI, jd_TT = TimeAdjust(gd_UTC)
 
@@ -353,8 +357,6 @@ def IAU_ERotationAngle(rad_tirs, vel_tirs, gd_UTC, Transpose):
         rad_cirs = (np.transpose(R) * rad_tirs)
         vel_cirs = (np.transpose(R) * vel_tirs -
                     np.transpose(np.cross(E_w, np.transpose(rad_tirs))))
-    else:
-        raise RuntimeError("Enter an int of 0, or 1 for the reverse transform")
     return rad_cirs, vel_cirs
 
 
