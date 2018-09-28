@@ -285,9 +285,9 @@ def IAU_ERotationAngle(rad_tirs, vel_tirs, gd_UTC, Transpose):
 
     Parameters
     ----------
-    rad_itrf : numpy matrix [3, 1] - [[X], [Y], [Z]]
+    rad_tirs : numpy matrix [3, 1] - [[X], [Y], [Z]]
         - Radius vector components defined in kilometers in the TIRS frame
-    vel_itrf : numpy matrix [3, 1] - [[VX], [VY], [VZ]]
+    vel_tirs : numpy matrix [3, 1] - [[VX], [VY], [VZ]]
         - Velocity vector components defined in kilometers in the TIRS frame
     gd_UTC : numpy matrix [6, 1] - [[Yr], [Mo], [Day], [Hr], [Min], [Sec]]
         - Gregorian Date
@@ -296,9 +296,9 @@ def IAU_ERotationAngle(rad_tirs, vel_tirs, gd_UTC, Transpose):
 
     Returns
     -------
-    rad_tirs : numpy matrix [3, 1] - [[X], [Y], [Z]]
+    rad_cirs : numpy matrix [3, 1] - [[X], [Y], [Z]]
         - Radius vector components defined in kilometers in the CIRS frame
-    vel_tirs : numpy matrix [3, 1] - [[VX], [VY], [VZ]]
+    vel_cirs : numpy matrix [3, 1] - [[VX], [VY], [VZ]]
         - Velocity vector components defined in kilometers in the CIRS frame
 
     See Also
