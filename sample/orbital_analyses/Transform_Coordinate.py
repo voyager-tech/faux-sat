@@ -195,7 +195,7 @@ def Geodetic2Geocentric(lla_D):
 
 def IAU_PolarMotion(rad_itrf, vel_itrf, gd_UTC, Transpose):
     """
-    Transforms vectors from ITRF to TIRS system following IAU-2010 conventions
+    Transforms vectors from ITRF to TIRS frame following IAU-2010 conventions
 
     Parameters
     ----------
@@ -217,8 +217,11 @@ def IAU_PolarMotion(rad_itrf, vel_itrf, gd_UTC, Transpose):
 
     See Also
     --------
-    FK5_PolarMotion : Transform to the PEF reference frame isung the
-    IAU-76/FK5 reduction
+    FK5_ECFixed2J2000 : Transform from an earth fixed frame (ECEF) to an
+    earth based inertial frame (J2000) using the IAU-76/FK5 reduction
+
+    FK5_J20002ECFixed : Transform from an earth based inertial frame (J2000)
+    to an earth fixed frame (ECEF) using the IAU-76/FK5 reduction
 
     References
     ----------
@@ -277,6 +280,41 @@ def IAU_PolarMotion(rad_itrf, vel_itrf, gd_UTC, Transpose):
 
 
 def IAU_ERotationAngle(rad_tirs, vel_tirs, gd_UTC, Transpose):
+    """
+    Transforms vectors from TIRS to CIRS frame following IAU-2010 conventions
+
+    Parameters
+    ----------
+    rad_itrf : numpy matrix [3, 1] - [[X], [Y], [Z]]
+        - Radius vector components defined in kilometers in the TIRS frame
+    vel_itrf : numpy matrix [3, 1] - [[VX], [VY], [VZ]]
+        - Velocity vector components defined in kilometers in the TIRS frame
+    gd_UTC : numpy matrix [6, 1] - [[Yr], [Mo], [Day], [Hr], [Min], [Sec]]
+        - Gregorian Date
+    Transpose : int of 0 or 1
+        - Determines wether the transform is tirs->cirs (0) or cirs->tirs (1)
+
+    Returns
+    -------
+    rad_tirs : numpy matrix [3, 1] - [[X], [Y], [Z]]
+        - Radius vector components defined in kilometers in the CIRS frame
+    vel_tirs : numpy matrix [3, 1] - [[VX], [VY], [VZ]]
+        - Velocity vector components defined in kilometers in the CIRS frame
+
+    See Also
+    --------
+    FK5_ECFixed2J2000 : Transform from an earth fixed frame (ECEF) to an
+    earth based inertial frame (J2000) using the IAU-76/FK5 reduction
+
+    FK5_J20002ECFixed : Transform from an earth based inertial frame (J2000)
+    to an earth fixed frame (ECEF) using the IAU-76/FK5 reduction
+
+    References
+    ----------
+    [1] D. Vallado, `Fundamentals of Astrodynamics and Applications`. 4th ed.,
+    Microcosm Press, 2013.
+        - Pg. 212-213
+    """
     # Earth Rotation Angle (IAU-2006/2000, CIO Based) TIRS -> CIRS, Pg. 212
 
     # Time Adjustments
