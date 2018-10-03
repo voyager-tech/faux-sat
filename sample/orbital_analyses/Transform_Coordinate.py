@@ -1,8 +1,11 @@
 # Utilized Modules
 import numpy as np
 from copy import deepcopy as dc
+from datetime import datetime, timedelta
 
 from orbital_analyses.Transform_State import TimeAdjust
+from orbital_analyses.Transform_State import JD2Gregorian
+from orbital_analyses.Transform_State import Gregorian2JD
 
 # ********************** Coordinate Reference Sheet **********************
 # *** Earth Based Systems ***
@@ -358,6 +361,166 @@ def IAU_ERotationAngle(rad_tirs, vel_tirs, gd_UTC, Transpose):
         vel_cirs = (np.transpose(R) * (vel_tirs -
                     np.transpose(np.cross(E_w, np.transpose(rad_tirs)))))
     return rad_cirs, vel_cirs
+
+
+def IAU_PrecessionNutation(rad_cirs, vel_cirs, gd_UTC, Transpose):
+    """
+    Transforms vectors from CIRS to GCRF frame following IAU-2010 conventions
+
+    Parameters
+    ----------
+    rad_cirs : numpy matrix [3, 1] - [[X], [Y], [Z]]
+        - Radius vector components defined in kilometers in the CIRS frame
+    vel_cirs : numpy matrix [3, 1] - [[VX], [VY], [VZ]]
+        - Velocity vector components defined in kilometers in the CIRS frame
+    gd_UTC : numpy matrix [6, 1] - [[Yr], [Mo], [Day], [Hr], [Min], [Sec]]
+        - Gregorian Date
+    Transpose : int of 0 or 1
+        - Determines wether the transform is cirs->gcrf (0) or gcrf->cirs (1)
+
+    Returns
+    -------
+    rad_gcrf : numpy matrix [3, 1] - [[X], [Y], [Z]]
+        - Radius vector components defined in kilometers in the GCRF frame
+    vel_gcrf : numpy matrix [3, 1] - [[VX], [VY], [VZ]]
+        - Velocity vector components defined in kilometers in the GCRF frame
+
+    See Also
+    --------
+    FK5_ECFixed2J2000 : Transform from an earth fixed frame (ECEF) to an
+    earth based inertial frame (J2000) using the IAU-76/FK5 reduction
+
+    FK5_J20002ECFixed : Transform from an earth based inertial frame (J2000)
+    to an earth fixed frame (ECEF) using the IAU-76/FK5 reduction
+
+    References
+    ----------
+    [1] D. Vallado, `Fundamentals of Astrodynamics and Applications`. 4th ed.,
+    Microcosm Press, 2013.
+        - Pg. 213-215, 1045
+    [2] IAU 2006/2000A expression of the X coordinate of the CIP in the GCRS
+        - http://maia.usno.navy.mil/conventions/2010/2010_official/chapter5/additional_info/tab5.2a.txt
+    [3] IAU 2006/2000A expression of the Y coordinate of the CIP in the GCRS
+        - http://maia.usno.navy.mil/conventions/2010/2010_official/chapter5/additional_info/tab5.2b.txt
+    [4] IAU 2006/2000A expression of the quantity s(t) + XY/2
+        - http://maia.usno.navy.mil/conventions/2010/2010_official/chapter5/additional_info/tab5.2d.txt
+    """
+    # Precession-Nutation (IAU-2006/2000, CIO Based) CIRS -> GCRF, Pg. 213
+
+    # Raise errors before running script
+    while Transpose not in [0, 1]:
+        raise RuntimeError("Enter an int of 0; or 1 for the reverse transform")
+
+    # Time Adjustments
+    jd_UTC, jd_UT1, jd_TAI, jd_TT = TimeAdjust(gd_UTC)
+    T_TT = np.linalg.norm((jd_TT - 2451545.0) / 36525)
+    gd_TT = JD2Gregorian(jd_TT)
+    # Initial time for TDB determination
+    t_ms = np.asmatrix(np.zeros((7, 1), dtype=np.float64))
+    t_ms[0:5, 0] = gd_TT[0:5, 0]
+    t_ms[5, 0] = np.floor(gd_TT[5, 0])
+    t_ms[6, 0] = (np.mod(gd_TT[5, 0], 1) * 1e6)
+    t_ms = t_ms.astype(int)
+    TDB_i = datetime(t_ms[0, 0], t_ms[1, 0], t_ms[2, 0],
+                     t_ms[3, 0], t_ms[4, 0], t_ms[5, 0], t_ms[6, 0])
+    # Calculate time delta to adjust time from TT to TDB
+    # TODO: Double check this time conversion
+    add_sec = (0.001657 * np.sin(628.3076 * T_TT + 6.2401))  # +
+#           (0.000022 * np.sin(575.3385 * T_TT + 4.2970)) +
+#           (0.000014 * np.sin(1256.6152 * T_TT + 6.1969)) +
+#           (0.000005 * np.sin(606.9777 * T_TT + 4.0212)) +
+#           (0.000005 * np.sin(52.9691 * T_TT + 0.4444)) +
+#           (0.000002 * np.sin(21.3299 * T_TT + 5.5431)) +
+#           (0.000010 * T_TT * np.sin(628.3076 * T_TT + 4.2490)))  # sec
+    TDB_add = timedelta(seconds=add_sec)
+    TDB_f = TDB_i + TDB_add
+    # Convert back to numpy array
+    TDB_np = np.datetime64(TDB_f)
+    gd_TDB = np.asmatrix(np.zeros((6, 1), dtype=np.float64))
+    gd_TDB[0, 0] = TDB_np.astype(object).year
+    gd_TDB[1, 0] = TDB_np.astype(object).month
+    gd_TDB[2, 0] = TDB_np.astype(object).day
+    gd_TDB[3, 0] = TDB_np.astype(object).hour
+    gd_TDB[4, 0] = TDB_np.astype(object).minute
+    gd_TDB[5, 0] = (TDB_np.astype(object).second +
+                    (TDB_np.astype(object).microsecond * 1e-6))
+    # Convert to JD
+    jd_TDB = Gregorian2JD(gd_TDB)
+    # Determine julian centuries for TDB
+    T_TDB = np.linalg.norm((jd_TDB - 2451545.0) / 36525)
+
+    # Transform Constants
+    # Determine angles for Earth's Nutation (r = 360 deg)
+    M_luna_d = ((485868.249036 + (1717915923.2178 * T_TT) +
+                 (31.8792 * (T_TT ** 2)) + (0.051635 * (T_TT ** 3)) -
+                 (0.00024470 * (T_TT ** 4))) * (1 / 3600))  # deg
+    # Reduce withing 360 deg
+    M_luna = np.mod(M_luna_d, (360))
+
+    M_sun_d = ((1287104.79305 + (129596581.0481 * T_TT) -
+                (0.5532 * (T_TT ** 2)) + (0.000136 * (T_TT ** 3)) -
+                (0.00001149 * (T_TT ** 4))) * (1 / 3600))  # deg
+    # Reduce withing 360 deg
+    M_sun = np.mod(M_sun_d, (360))
+
+    Um_luna_d = ((335779.526232 + (1739527262.8478 * T_TT) -
+                  (12.7512 * (T_TT ** 2)) - (0.001037 * (T_TT ** 3)) +
+                  (0.00000417 * (T_TT ** 4))) * (1 / 3600))  # deg
+    # Reduce withing 360 deg
+    Um_luna = np.mod(Um_luna_d, (360))
+
+    D_sun_d = ((1072260.70369 + (1602961601.2090 * T_TT) -
+                (6.3706 * (T_TT ** 2)) + (0.006593 * (T_TT ** 3)) -
+                (0.00003169 * (T_TT ** 4))) * (1 / 3600))  # deg
+    # Reduce withing 360 deg
+    D_sun = np.mod(D_sun_d, (360))
+
+    O_luna_d = ((450160.398036 - (6962890.5431 * T_TT) +
+                 (7.4722 * (T_TT ** 2)) + (0.007702 * (T_TT ** 3)) -
+                 (0.00005939 * (T_TT ** 4))) * (1 / 3600))  # deg
+    # Reduce withing 360 deg
+    O_luna = np.mod(O_luna_d, (360))
+
+    # Determine planetary nutation values
+    M_mercury_d = (252.250905494 + (149472.6746358 * T_TDB))  # deg
+    # Reduce withing 360 deg
+    M_mercury = np.mod(M_mercury_d, (360))
+
+    M_venus_d = (181.979800853 + (58517.8156748 * T_TDB))  # deg
+    # Reduce withing 360 deg
+    M_venus = np.mod(M_venus_d, (360))
+
+    M_earth_d = (100.466448494 + (35999.3728521 * T_TDB))  # deg
+    # Reduce withing 360 deg
+    M_earth = np.mod(M_earth_d, (360))
+
+    M_mars_d = (355.433274605 + (19140.299314 * T_TDB))  # deg
+    # Reduce withing 360 deg
+    M_mars = np.mod(M_mars_d, (360))
+
+    M_jupiter_d = (34.351483900 + (3034.90567464 * T_TDB))  # deg
+    # Reduce withing 360 deg
+    M_jupiter = np.mod(M_jupiter_d, (360))
+
+    M_saturn_d = (50.0774713998 + (1222.11379404 * T_TDB))  # deg
+    # Reduce withing 360 deg
+    M_saturn = np.mod(M_saturn_d, (360))
+
+    M_uranus_d = (314.055005137 + (428.466998313 * T_TDB))  # deg
+    # Reduce withing 360 deg
+    M_uranus = np.mod(M_uranus_d, (360))
+
+    M_neptune_d = (304.348665499 + (218.486200208 * T_TDB))  # deg
+    # Reduce withing 360 deg
+    M_neptune = np.mod(M_neptune_d, (360))
+
+    M_pluto_d = ((1.39697137214 * T_TDB) + (0.0003086 * (T_TDB ** 2)))  # deg
+    # Reduce withing 360 deg
+    M_pluto = np.mod(M_pluto_d, (360))
+
+
+
+    return rad_gcrf, vel_gcrf
 
 
 ###############################################################################
