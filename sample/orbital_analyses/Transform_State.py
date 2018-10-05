@@ -70,7 +70,7 @@ def JD2Gregorian(JD):
         GD[4, i] = np.trunc((tau - GD[3, i]) * 60)
         # Determine Second
         GD[5, i] = ((tau - GD[3, i] - (GD[4, i] / 60)) * 3600)
-    return GD
+    return np.asmatrix(GD)
 
 
 def Gregorian2JD(GD):
@@ -149,6 +149,7 @@ def TimeAdjust(GD):
     dAT = (32)  # Seconds - Astronomical Almanac
     dTT = (32.184)  # Seconds
 
+    # TODO: add in datetime handling for each of these transforms, if needed
     # UTC
     GD_UTC = np.asmatrix(dc(GD))
     # UT1
