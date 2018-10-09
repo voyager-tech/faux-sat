@@ -337,7 +337,6 @@ def IAU_ERotationAngle(rad_tirs, vel_tirs, gd_UTC, Transpose):
                            1.00273781191135448 * (jd_UT1 - 2451545.0)))  # rad
     # Reduce to within 2 pi radians
     T_ERA = np.mod(T_era, (2 * np.pi))
-    # Convert from Seconds to Degrees
 
     # Initialize rotation matrix [ROT3]
     R = np.matrix(('0 0 0; 0 0 0; 0 0 0'), dtype=np.float64)
@@ -362,6 +361,8 @@ def IAU_ERotationAngle(rad_tirs, vel_tirs, gd_UTC, Transpose):
                     np.transpose(np.cross(E_w, np.transpose(rad_tirs)))))
     return rad_cirs, vel_cirs
 
+
+#%%
 
 def IAU_PrecessionNutation(rad_cirs, vel_cirs, gd_UTC, Transpose):
     """
@@ -448,246 +449,176 @@ def IAU_PrecessionNutation(rad_cirs, vel_cirs, gd_UTC, Transpose):
     jd_TDB = Gregorian2JD(gd_TDB)
     # Determine julian centuries for TDB
     T_TDB = np.linalg.norm((jd_TDB - 2451545.0) / 36525)
-
+    # Additional data from online
+    # These from IERS Earth Orientation Data - EOP 14 C04 (IAU2000A) - Latest
+    # https://datacenter.iers.org/eop/-/somos/5Rgv/latest/223
+    dX = -0.000205  # sexagesimal
+    dY = -0.000136  # sexagesimal
+###############################################################################
     # Transform Constants
     # Determine angles for Earth's Nutation (r = 360 deg)
-    M_luna_d = ((485868.249036 + (1717915923.2178 * T_TT) +
-                 (31.8792 * (T_TT ** 2)) + (0.051635 * (T_TT ** 3)) -
-                 (0.00024470 * (T_TT ** 4))) * (1 / 3600))  # deg
-    # Reduce withing 360 deg
-    M_luna = np.mod(M_luna_d, (360))  # deg
-
-    M_sun_d = ((1287104.79305 + (129596581.0481 * T_TT) -
-                (0.5532 * (T_TT ** 2)) + (0.000136 * (T_TT ** 3)) -
-                (0.00001149 * (T_TT ** 4))) * (1 / 3600))  # deg
-    # Reduce withing 360 deg
-    M_sun = np.mod(M_sun_d, (360))  # deg
-
-    Um_luna_d = ((335779.526232 + (1739527262.8478 * T_TT) -
-                  (12.7512 * (T_TT ** 2)) - (0.001037 * (T_TT ** 3)) +
-                  (0.00000417 * (T_TT ** 4))) * (1 / 3600))  # deg
-    # Reduce withing 360 deg
-    Um_luna = np.mod(Um_luna_d, (360))  # deg
-
-    D_sun_d = ((1072260.70369 + (1602961601.2090 * T_TT) -
-                (6.3706 * (T_TT ** 2)) + (0.006593 * (T_TT ** 3)) -
-                (0.00003169 * (T_TT ** 4))) * (1 / 3600))  # deg
-    # Reduce withing 360 deg
-    D_sun = np.mod(D_sun_d, (360))  # deg
-
-    O_luna_d = ((450160.398036 - (6962890.5431 * T_TT) +
-                 (7.4722 * (T_TT ** 2)) + (0.007702 * (T_TT ** 3)) -
-                 (0.00005939 * (T_TT ** 4))) * (1 / 3600))  # deg
-    # Reduce withing 360 deg
-    O_luna = np.mod(O_luna_d, (360))  # deg
-
+    Nu_term = np.zeros((14, 1), dtype=np.float)
+    Nu_term[0, 0] = ((485868.249036 + (1717915923.2178 * T_TT) +
+                      (31.8792 * (T_TT ** 2)) + (0.051635 * (T_TT ** 3)) -
+                      (0.00024470 * (T_TT ** 4))) * (1 / 3600))  # deg
+    Nu_term[1, 0] = ((1287104.79305 + (129596581.0481 * T_TT) -
+                      (0.5532 * (T_TT ** 2)) + (0.000136 * (T_TT ** 3)) -
+                      (0.00001149 * (T_TT ** 4))) * (1 / 3600))  # deg
+    Nu_term[2, 0] = ((335779.526232 + (1739527262.8478 * T_TT) -
+                      (12.7512 * (T_TT ** 2)) - (0.001037 * (T_TT ** 3)) +
+                      (0.00000417 * (T_TT ** 4))) * (1 / 3600))  # deg
+    Nu_term[3, 0] = ((1072260.70369 + (1602961601.2090 * T_TT) -
+                      (6.3706 * (T_TT ** 2)) + (0.006593 * (T_TT ** 3)) -
+                      (0.00003169 * (T_TT ** 4))) * (1 / 3600))  # deg
+    Nu_term[4, 0] = ((450160.398036 - (6962890.5431 * T_TT) +
+                      (7.4722 * (T_TT ** 2)) + (0.007702 * (T_TT ** 3)) -
+                      (0.00005939 * (T_TT ** 4))) * (1 / 3600))  # deg
     # Determine planetary nutation values
-    M_mercury_d = (252.250905494 + (149472.6746358 * T_TDB))  # deg
-    # Reduce withing 360 deg
-    M_mercury = np.mod(M_mercury_d, (360))  # deg
-
-    M_venus_d = (181.979800853 + (58517.8156748 * T_TDB))  # deg
-    # Reduce withing 360 deg
-    M_venus = np.mod(M_venus_d, (360))  # deg
-
-    M_earth_d = (100.466448494 + (35999.3728521 * T_TDB))  # deg
-    # Reduce withing 360 deg
-    M_earth = np.mod(M_earth_d, (360))  # deg
-
-    M_mars_d = (355.433274605 + (19140.299314 * T_TDB))  # deg
-    # Reduce withing 360 deg
-    M_mars = np.mod(M_mars_d, (360))  # deg
-
-    M_jupiter_d = (34.351483900 + (3034.90567464 * T_TDB))  # deg
-    # Reduce withing 360 deg
-    M_jupiter = np.mod(M_jupiter_d, (360))  # deg
-
-    M_saturn_d = (50.0774713998 + (1222.11379404 * T_TDB))  # deg
-    # Reduce withing 360 deg
-    M_saturn = np.mod(M_saturn_d, (360))  # deg
-
-    M_uranus_d = (314.055005137 + (428.466998313 * T_TDB))  # deg
-    # Reduce withing 360 deg
-    M_uranus = np.mod(M_uranus_d, (360))  # deg
-
-    M_neptune_d = (304.348665499 + (218.486200208 * T_TDB))  # deg
-    # Reduce withing 360 deg
-    M_neptune = np.mod(M_neptune_d, (360))  # deg
-
-    M_pluto_d = ((1.39697137214 * T_TDB) + (0.0003086 * (T_TDB ** 2)))  # deg
-    # Reduce withing 360 deg
-    M_pluto = np.mod(M_pluto_d, (360))  # deg
-
+    Nu_term[5, 0] = (252.250905494 + (149472.6746358 * T_TDB))  # deg
+    Nu_term[6, 0] = (181.979800853 + (58517.8156748 * T_TDB))  # deg
+    Nu_term[7, 0] = (100.466448494 + (35999.3728521 * T_TDB))  # deg
+    Nu_term[8, 0] = (355.433274605 + (19140.299314 * T_TDB))  # deg
+    Nu_term[9, 0] = (34.351483900 + (3034.90567464 * T_TDB))  # deg
+    Nu_term[10, 0] = (50.0774713998 + (1222.11379404 * T_TDB))  # deg
+    Nu_term[11, 0] = (314.055005137 + (428.466998313 * T_TDB))  # deg
+    Nu_term[12, 0] = (304.348665499 + (218.486200208 * T_TDB))  # deg
+    Nu_term[13, 0] = ((1.39697137214 * T_TDB) + (0.0003086 * (T_TDB ** 2)))
+    # Reduce all values to withing 360 deg
+    for j in range(np.size(Nu_term)):
+        Nu_term[j, 0] = np.mod(Nu_term[j, 0], (360))  # deg
+###############################################################################
     # Import constant matrices
     Xcon = np.load('orbital_analyses/maia_tab5.2a.npy')
     Ycon = np.load('orbital_analyses/maia_tab5.2b.npy')
     Scon = np.load('orbital_analyses/maia_tab5.2d.npy')
-###############################################################################
+
     # Calculate all necessary a_p coefficients
     a_pX = np.asmatrix(np.zeros((np.size(Xcon, axis=0), 1), dtype=np.float))
     a_pY = np.asmatrix(np.zeros((np.size(Ycon, axis=0), 1), dtype=np.float))
     a_pS = np.asmatrix(np.zeros((np.size(Scon, axis=0), 1), dtype=np.float))
+
+    # Calculate the X, Y, & s arguments for sin & cos
     for i in range(np.size(Xcon, axis=0)):  # X paramater
-        a_pX[i, 0] = ((Xcon[i, 3] * M_luna) + (Xcon[i, 4] * M_sun) +
-                      (Xcon[i, 5] * Um_luna) + (Xcon[i, 6] * D_sun) +
-                      (Xcon[i, 7] * O_luna) + (Xcon[i, 8] * M_mercury) +
-                      (Xcon[i, 9] * M_venus) + (Xcon[i, 10] * M_earth) +
-                      (Xcon[i, 11] * M_mars) + (Xcon[i, 12] * M_jupiter) +
-                      (Xcon[i, 13] * M_saturn) + (Xcon[i, 14] * M_uranus) +
-                      (Xcon[i, 15] * M_neptune) + (Xcon[i, 16] * M_pluto))
+        a_pX[i, 0] = sum(x * y for x, y in zip(Nu_term[:, 0], Xcon[i, 3:17]))
         # Reduce withing 360 deg and convert to radians
         a_pX[i, 0] = np.deg2rad(np.mod(a_pX[i, 0], (360)))  # rad
     for i in range(np.size(Ycon, axis=0)):  # Y paramater
-        a_pY[i, 0] = ((Ycon[i, 3] * M_luna) + (Ycon[i, 4] * M_sun) +
-                      (Ycon[i, 5] * Um_luna) + (Ycon[i, 6] * D_sun) +
-                      (Ycon[i, 7] * O_luna) + (Ycon[i, 8] * M_mercury) +
-                      (Ycon[i, 9] * M_venus) + (Ycon[i, 10] * M_earth) +
-                      (Ycon[i, 11] * M_mars) + (Ycon[i, 12] * M_jupiter) +
-                      (Ycon[i, 13] * M_saturn) + (Ycon[i, 14] * M_uranus) +
-                      (Ycon[i, 15] * M_neptune) + (Ycon[i, 16] * M_pluto))
+        a_pY[i, 0] = sum(x * y for x, y in zip(Nu_term[:, 0], Ycon[i, 3:17]))
         # Reduce withing 360 deg and convert to radians
         a_pY[i, 0] = np.deg2rad(np.mod(a_pY[i, 0], (360)))  # rad
     for i in range(np.size(Scon, axis=0)):  # s paramater
-        a_pS[i, 0] = ((Scon[i, 3] * M_luna) + (Scon[i, 4] * M_sun) +
-                      (Scon[i, 5] * Um_luna) + (Scon[i, 6] * D_sun) +
-                      (Scon[i, 7] * O_luna) + (Scon[i, 8] * M_mercury) +
-                      (Scon[i, 9] * M_venus) + (Scon[i, 10] * M_earth) +
-                      (Scon[i, 11] * M_mars) + (Scon[i, 12] * M_jupiter) +
-                      (Scon[i, 13] * M_saturn) + (Scon[i, 14] * M_uranus) +
-                      (Scon[i, 15] * M_neptune) + (Scon[i, 16] * M_pluto))
+        a_pS[i, 0] = sum(x * y for x, y in zip(Nu_term[:, 0], Scon[i, 3:17]))
         # Reduce withing 360 deg and convert to radians
         a_pS[i, 0] = np.deg2rad(np.mod(a_pS[i, 0], (360)))  # rad
 ###############################################################################
-    # Calculate all necessary a_p coefficients
-    a_pX = np.asmatrix(np.zeros((np.size(Xcon, axis=0), 1), dtype=np.float))
-    a_pY = np.asmatrix(np.zeros((np.size(Ycon, axis=0), 1), dtype=np.float))
-    a_pS = np.asmatrix(np.zeros((np.size(Scon, axis=0), 1), dtype=np.float))
-    x = 0
-    for j in [1306, 253, 36, 4, 1]:
-        for i in range(0, j):  # X paramater
-            a_pX[i + x, 0] = ((np.sum(Xcon[0:i + 1, 3]) * M_luna) +
-                              (np.sum(Xcon[0:i + 1, 4]) * M_sun) +
-                              (np.sum(Xcon[0:i + 1, 5]) * Um_luna) +
-                              (np.sum(Xcon[0:i + 1, 6]) * D_sun) +
-                              (np.sum(Xcon[0:i + 1, 7]) * O_luna) +
-                              (np.sum(Xcon[0:i + 1, 8]) * M_mercury) +
-                              (np.sum(Xcon[0:i + 1, 9]) * M_venus) +
-                              (np.sum(Xcon[0:i + 1, 10]) * M_earth) +
-                              (np.sum(Xcon[0:i + 1, 11]) * M_mars) +
-                              (np.sum(Xcon[0:i + 1, 12]) * M_jupiter) +
-                              (np.sum(Xcon[0:i + 1, 13]) * M_saturn) +
-                              (np.sum(Xcon[0:i + 1, 14]) * M_uranus) +
-                              (np.sum(Xcon[0:i + 1, 15]) * M_neptune) +
-                              (np.sum(Xcon[0:i + 1, 16]) * M_pluto))
-            # Reduce within 360 deg and convert to radians
-            a_pX[i + x, 0] = np.deg2rad(np.mod(a_pX[i + x, 0], (360)))  # rad
-        x = x + j
-
-    x = 0
-    for j in [962, 277, 30, 5, 1]:
-        for i in range(0, j):  # Y paramater
-            a_pY[i + x, 0] = ((np.sum(Ycon[0:i + 1, 3]) * M_luna) +
-                              (np.sum(Ycon[0:i + 1, 4]) * M_sun) +
-                              (np.sum(Ycon[0:i + 1, 5]) * Um_luna) +
-                              (np.sum(Ycon[0:i + 1, 6]) * D_sun) +
-                              (np.sum(Ycon[0:i + 1, 7]) * O_luna) +
-                              (np.sum(Ycon[0:i + 1, 8]) * M_mercury) +
-                              (np.sum(Ycon[0:i + 1, 9]) * M_venus) +
-                              (np.sum(Ycon[0:i + 1, 10]) * M_earth) +
-                              (np.sum(Ycon[0:i + 1, 11]) * M_mars) +
-                              (np.sum(Ycon[0:i + 1, 12]) * M_jupiter) +
-                              (np.sum(Ycon[0:i + 1, 13]) * M_saturn) +
-                              (np.sum(Ycon[0:i + 1, 14]) * M_uranus) +
-                              (np.sum(Ycon[0:i + 1, 15]) * M_neptune) +
-                              (np.sum(Ycon[0:i + 1, 16]) * M_pluto))
-            # Reduce within 360 deg and convert to radians
-            a_pY[i + x, 0] = np.deg2rad(np.mod(a_pY[i + x, 0], (360)))  # rad
-        x = x + j
-
-    x = 0
-    for j in [33, 3, 25, 4, 1]:
-        for i in range(0, j):  # s paramater
-            a_pS[i + x, 0] = ((np.sum(Scon[0:i + 1, 3]) * M_luna) +
-                              (np.sum(Scon[0:i + 1, 4]) * M_sun) +
-                              (np.sum(Scon[0:i + 1, 5]) * Um_luna) +
-                              (np.sum(Scon[0:i + 1, 6]) * D_sun) +
-                              (np.sum(Scon[0:i + 1, 7]) * O_luna) +
-                              (np.sum(Scon[0:i + 1, 8]) * M_mercury) +
-                              (np.sum(Scon[0:i + 1, 9]) * M_venus) +
-                              (np.sum(Scon[0:i + 1, 10]) * M_earth) +
-                              (np.sum(Scon[0:i + 1, 11]) * M_mars) +
-                              (np.sum(Scon[0:i + 1, 12]) * M_jupiter) +
-                              (np.sum(Scon[0:i + 1, 13]) * M_saturn) +
-                              (np.sum(Scon[0:i + 1, 14]) * M_uranus) +
-                              (np.sum(Scon[0:i + 1, 15]) * M_neptune) +
-                              (np.sum(Scon[0:i + 1, 16]) * M_pluto))
-            # Reduce within 360 deg and convert to radians
-            a_pS[i + x, 0] = np.deg2rad(np.mod(a_pS[i + x, 0], (360)))  # rad
-        x = x + j
-###############################################################################
-    # X Summation (total)
-    # Summation quantities
+    # Calculate all portioned summations for X, Y, & s
+    # X paramater
     Xsum = np.asmatrix(np.zeros((np.size(Xcon, axis=0), 1), dtype=np.float))
     x = 0
     y = 0
     for j in [1306, 253, 36, 4, 1]:
-        for i in range(0, j):  # s paramater
-            Xsum[i + x, 0] = (((np.sum(Xcon[0:i + 1, 1]) *
-                                np.sin(a_pX[i, 0])) +
-                              (np.sum(Xcon[0:i + 1, 2]) *
-                               np.cos(a_pX[i, 0]))) * (T_TT ** y))
+        Xint = 0
+        for i in range(0, j):
+            Xint = Xint + (((Xcon[i + x, 1] * 1e-06 * np.sin(a_pX[i + x, 0])) +
+                           (Xcon[i + x, 2] * 1e-06 * np.cos(a_pX[i + x, 0]))) *
+                           (T_TT ** y))
+        Xsum[i + x, 0] = Xint
         x = x + j
         y = y + 1
-    # Break up into 5 different summed values
-    Xsum_1 = np.sum(Xsum[0:1306, 0])
-    Xsum_2 = np.sum(Xsum[1306:1559, 0])
-    Xsum_3 = np.sum(Xsum[1559:1595, 0])
-    Xsum_4 = np.sum(Xsum[1595:1599, 0])
-    Xsum_5 = np.sum(Xsum[1599:1600, 0])
+    # Y paramater
+    Ysum = np.asmatrix(np.zeros((np.size(Ycon, axis=0), 1), dtype=np.float))
+    x = 0
+    y = 0
+    for j in [962, 277, 30, 5, 1]:
+        Yint = 0
+        for i in range(0, j):
+            Yint = Yint + (((Ycon[i + x, 1] * 1e-06 * np.sin(a_pY[i + x, 0])) +
+                           (Ycon[i + x, 2] * 1e-06 * np.cos(a_pY[i + x, 0]))) *
+                           (T_TT ** y))
+        Ysum[i + x, 0] = Yint
+        x = x + j
+        y = y + 1
+    # s paramater
+    Ssum = np.asmatrix(np.zeros((np.size(Scon, axis=0), 1), dtype=np.float))
+    x = 0
+    y = 0
+    for j in [33, 3, 25, 4, 1]:
+        Sint = 0
+        for i in range(0, j):
+            Sint = Sint + (((Scon[i + x, 1] * 1e-06 * np.sin(a_pS[i + x, 0])) +
+                           (Scon[i + x, 2] * 1e-06 * np.cos(a_pS[i + x, 0]))) *
+                           (T_TT ** y))
+        Ssum[i + x, 0] = Sint
+        x = x + j
+        y = y + 1
 ###############################################################################
-    Xsum1 = 0
-    for i in range(0, 1306):
-        Xadd = (((Xcon[i, 1] * np.sin(a_pX[i, 0])) +
-                (Xcon[i, 2] * np.cos(a_pX[i, 0]))))
-        Xsum1 = Xsum1 + Xadd
-    Xsum2 = 0
-    for i in range(1306, 1559):
-        Xadd = (((Xcon[i, 1] * np.sin(a_pX[i, 0])) +
-                (Xcon[i, 2] * np.cos(a_pX[i, 0]))) * T_TT)
-        Xsum2 = Xsum2 + Xadd
-    Xsum3 = 0
-    for i in range(1559, 1595):
-        Xadd = (((Xcon[i, 1] * np.sin(a_pX[i, 0])) +
-                (Xcon[i, 2] * np.cos(a_pX[i, 0]))) * (T_TT ** 2))
-        Xsum3 = Xsum3 + Xadd
-    Xsum4 = 0
-    for i in range(1595, 1599):
-        Xadd = (((Xcon[i, 1] * np.sin(a_pX[i, 0])) +
-                (Xcon[i, 2] * np.cos(a_pX[i, 0]))) * (T_TT ** 3))
-        Xsum4 = Xsum4 + Xadd
-    Xsum5 = 0
-    for i in range(1599, 1600):
-        Xadd = (((Xcon[i, 1] * np.sin(a_pX[i, 0])) +
-                (Xcon[i, 2] * np.cos(a_pX[i, 0]))) * (T_TT ** 4))
-        Xsum5 = Xsum5 + Xadd
-###############################################################################
-    # X final calculation
+    # X, Y, & s final calculations
     X = (-0.016617 + (2004.191898 * T_TT) - (0.4297829 * (T_TT ** 2)) -
          (0.19861834 * (T_TT ** 3)) + (0.000007578 * (T_TT ** 4)) +
-         (0.0000059285 * (T_TT ** 5)) + Xsum1 + Xsum2 +
-         Xsum3 + Xsum4 + Xsum5)  # sexagesimal
-###############################################################################
-    X = (-0.016617 + (2004.191898 * T_TT) - (0.4297829 * (T_TT ** 2)) -
-         (0.19861834 * (T_TT ** 3)) + (0.000007578 * (T_TT ** 4)) +
-         (0.0000059285 * (T_TT ** 5)) + Xsum1 + (Xsum2 * T_TT) +
-         (Xsum3 * (T_TT ** 2)) + (Xsum4 * (T_TT ** 3)) +
-         (Xsum5 * (T_TT ** 4)))  # sexagesimal
+         (0.0000059285 * (T_TT ** 5)) + np.sum(Xsum[0:1306, 0]) +
+         np.sum(Xsum[1306:1559, 0]) + np.sum(Xsum[1559:1595, 0]) +
+         np.sum(Xsum[1595:1599, 0]) + np.sum(Xsum[1599:1600, 0]) + dX)  # Sexag
+    print(X)
+    Y = (-0.006951 - (0.025896 * T_TT) - (22.4072747 * (T_TT ** 2)) +
+         (0.00190059 * (T_TT ** 3)) + (0.001112526 * (T_TT ** 4)) +
+         (0.0000001358 * (T_TT ** 5)) + np.sum(Ysum[0:962, 0]) +
+         np.sum(Ysum[962:1239, 0]) + np.sum(Ysum[1239:1269, 0]) +
+         np.sum(Ysum[1269:1274, 0]) + np.sum(Ysum[1274:1275, 0]) + dY)  # Sexag
+    print(Y)
+    s = (-((X * Y * 1e-06) / 2) + 0.000094 + (0.00380865 * T_TT) -
+         (0.00012268 * (T_TT ** 2)) - (0.07257411 * (T_TT ** 3)) +
+         (0.00002798 * (T_TT ** 4)) + (0.00001562 * (T_TT ** 5)) +
+         np.sum(Ssum[0:33, 0]) + np.sum(Ssum[33:36, 0]) +
+         np.sum(Ssum[36:61, 0]) + np.sum(Ssum[61:65, 0]) +
+         np.sum(Ssum[65:66, 0]))  # Sexagesimal
+    print(s)
+    X_r = (X * (1 / 3600))  # Rad
+    Y_r = (Y * (1 / 3600))  # Rad
+    d = np.arctan(np.sqrt(((X_r ** 2) + (Y_r ** 2)) /
+                          (1 - (X_r ** 2) - (Y_r ** 2))))  # deg
+    a = np.rad2deg(1 / (1 + np.cos(np.deg2rad(d))))  # deg
+    print(a)
 
+    Xr = dc(X * 1e-06)
+    Yr = dc(Y * 1e-06)
+    a_r = np.deg2rad(a)
+    sr = dc(s * 1e-06)
+    s_r = (s * (1 / 3600))  # rad
+    # Initialize rotation matrix [P]
+    P = np.matrix(('0 0 0; 0 0 0; 0 0 0'), dtype=np.float64)
+    P[0, 0] = (1 - a_r * (Xr ** 2))
+    P[0, 1] = (-a_r * Xr * Yr)
+    P[0, 2] = (Xr)
+    P[1, 0] = (-a_r * Xr * Yr)
+    P[1, 1] = (1 - a_r * (Yr ** 2))
+    P[1, 2] = (Yr)
+    P[2, 0] = (-Xr)
+    P[2, 1] = (-Yr)
+    P[2, 2] = (1 - a_r * ((Yr ** 2) + (Xr ** 2)))
+    # Initialize rotation matrix [N (ROT3)]
+    N = np.matrix(('0 0 0; 0 0 0; 0 0 0'), dtype=np.float64)
+    N[0, 0] = np.cos(-s_r)
+    N[0, 1] = np.sin(-s_r)
+    N[0, 2] = 0.
+    N[1, 0] = -np.sin(-s_r)
+    N[1, 1] = np.cos(-s_r)
+    N[1, 2] = 0.
+    N[2, 0] = 0.
+    N[2, 1] = 0.
+    N[2, 2] = 1.
 
+    # Apply Transform based on Transpose value (Forward or Backward Transform)
+    if Transpose == 0:
+        rad_gcrf = (P * N * rad_cirs)
+        vel_gcrf = (P * N * vel_cirs)
+    elif Transpose == 1:
+        # TODO: Check this transform
+        rad_gcrf = (np.transpose(P) * np.transpose(N) * rad_cirs)
+        vel_gcrf = (np.transpose(P) * np.transpose(N) * vel_cirs)
     return rad_gcrf, vel_gcrf
 
 
-###############################################################################
+#%%############################################################################
 ###############################################################################
 ###############################################################################
 ###############################################################################
