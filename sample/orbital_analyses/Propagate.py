@@ -13,9 +13,13 @@ E_Mu = 398600.4418          # Earth Mu (km^3 / sec^2)
 # %% Determine Inital State
 # Initial Rad / Vel - R0, V0 and epoch
 # r0 = (Req.Rad).magnitude  # km
-r0_i = np.matrix([[1949.73850397223], [-5139.978114855865], [-4852.90271319306]])  # km
+r0_i = np.matrix([[1949.73850397223],
+                  [-5139.978114855865],
+                  [-4852.90271319306]])  # km
 # v0 = (Req.Vel).magnitude  # km / sec
-v0_i = np.matrix([[-6.574850967942473], [0.2153270408156436], [-3.149950105296086]])  # km / sec
+v0_i = np.matrix([[-6.574850967942473],
+                  [0.2153270408156436],
+                  [-3.149950105296086]])  # km / sec
 # EpochGD_0 = Req.GD_UTC  # Gregorian Date
 EpochGD_0 = np.matrix([[2004], [4], [6], [0], [0], [0]])  # Gregorian Date
 EpochJD_0 = Gregorian2JD(EpochGD_0)  # Julian Date
@@ -44,6 +48,7 @@ def Gauss_Jackson_Prop(r0_i, v0_i, GD, step):
     StepSec = (Step.to(u.sec)).magnitude
 
     ###########################################################################
+    # TODO: Move all function definitions to top of main function or section?
     def guess1(Tdelt, alpha):
         # Vallado Alg. 8, Pg. 93
         X0 = (np.sqrt(E_Mu) * Tdelt * alpha)
