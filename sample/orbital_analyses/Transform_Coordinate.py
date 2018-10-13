@@ -285,7 +285,7 @@ def IAU_PolarMotion(rad_itrf, vel_itrf, gd_UTC, Transpose):
 
 def IAU_ERotationAngle(rad_tirs, vel_tirs, gd_UTC, Transpose):
     """
-    Transform vectors between TIRS to CIRS frame following IAU-2010 conventions
+    Transform vectors between TIRS & CIRS frame following IAU-2010 conventions
 
     Parameters
     ----------
@@ -365,7 +365,7 @@ def IAU_ERotationAngle(rad_tirs, vel_tirs, gd_UTC, Transpose):
 
 def IAU_PrecessionNutation(rad_cirs, vel_cirs, gd_UTC, Transpose):
     """
-    Transform vectors between CIRS to GCRF frame following IAU-2010 conventions
+    Transform vectors between CIRS & GCRF frame following IAU-2010 conventions
 
     Parameters
     ----------
@@ -616,7 +616,7 @@ def IAU_PrecessionNutation(rad_cirs, vel_cirs, gd_UTC, Transpose):
 
 def IAU_2000Reduction(rad, vel, gd_UTC, Transpose):
     """
-    Transform vectors between ITRF to GCRF frame following IAU-2010 conventions
+    Transform vectors between ITRF & GCRF frame following IAU-2010 conventions
 
     Parameters
     ----------
