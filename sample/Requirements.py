@@ -24,6 +24,9 @@ Rad = np.matrix([[-1033.4793830],
 Vel = np.matrix([[-3.225636520],
                  [-2.872451450],
                  [5.531924446]])
+Acc = np.matrix([[-0.00191078482442021],
+                 [-0.0022929137926414],
+                 [-0.00239148524154372]])
 # Initial Gregorian Date ([year; month; day; hour; minute; second])
 GD_UTC = np.zeros((6, 1), dtype=np.float64)
 GD_UTC[0, 0] = (2004)
