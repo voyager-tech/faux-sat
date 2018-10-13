@@ -509,29 +509,7 @@ def IAU_PrecessionNutation(rad_cirs, vel_cirs, gd_UTC, Transpose):
         a_pS[i, 0] = sum(x * y for x, y in zip(Nu_term[:, 0], Scon[i, 3:17]))
         # Reduce withing 360 deg and convert to radians
         a_pS[i, 0] = np.deg2rad(np.mod(a_pS[i, 0], (360)))  # rad
-# =============================================================================
-#     x = 0
-#     for j in [33, 3, 25, 4, 1]:
-#         for i in range(0, j):  # s paramater
-#             a_pS[i + x, 0] = ((np.sum(Scon[0:i + 1, 3]) * Nu_term[0, 0]) +
-#                               (np.sum(Scon[0:i + 1, 4]) * Nu_term[1, 0]) +
-#                               (np.sum(Scon[0:i + 1, 5]) * Nu_term[2, 0]) +
-#                               (np.sum(Scon[0:i + 1, 6]) * Nu_term[3, 0]) +
-#                               (np.sum(Scon[0:i + 1, 7]) * Nu_term[4, 0]) +
-#                               (np.sum(Scon[0:i + 1, 8]) * Nu_term[5, 0]) +
-#                               (np.sum(Scon[0:i + 1, 9]) * Nu_term[6, 0]) +
-#                               (np.sum(Scon[0:i + 1, 10]) * Nu_term[7, 0]) +
-#                               (np.sum(Scon[0:i + 1, 11]) * Nu_term[8, 0]) +
-#                               (np.sum(Scon[0:i + 1, 12]) * Nu_term[9, 0]) +
-#                               (np.sum(Scon[0:i + 1, 13]) * Nu_term[10, 0]) +
-#                               (np.sum(Scon[0:i + 1, 14]) * Nu_term[11, 0]) +
-#                               (np.sum(Scon[0:i + 1, 15]) * Nu_term[12, 0]) +
-#                               (np.sum(Scon[0:i + 1, 16]) * Nu_term[13, 0]))
-#             # Reduce within 360 deg and convert to radians
-#             a_pS[i + x, 0] = np.deg2rad(np.mod(a_pS[i + x, 0], (360)))  # rad
-#         x = x + j
-#     # Calculate all portioned summations for X, Y, & s
-# =============================================================================
+
     # X paramater
     Xsum = np.asmatrix(np.zeros((np.size(Xcon, axis=0), 1), dtype=np.float))
     x = 0
