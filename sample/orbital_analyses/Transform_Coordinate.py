@@ -192,13 +192,14 @@ def Geodetic2Geocentric(lla_D):
     lla_C = np.matrix([[lat_C * (180 / np.pi)], [lla_D[1, 0]], [lla_D[2, 0]]])
     return lla_C
 
+
 ###############################################################################
 ###############################################################################
 
 
 def IAU_PolarMotion(rad_itrf, vel_itrf, gd_UTC, Transpose):
     """
-    Transforms vectors from ITRF to TIRS frame following IAU-2010 conventions
+    Transform vectors between ITRF to TIRS frame following IAU-2010 conventions
 
     Parameters
     ----------
@@ -209,7 +210,7 @@ def IAU_PolarMotion(rad_itrf, vel_itrf, gd_UTC, Transpose):
     gd_UTC : numpy matrix [6, 1] - [[Yr], [Mo], [Day], [Hr], [Min], [Sec]]
         - Gregorian Date
     Transpose : int of 0 or 1
-        - Determines wether the transform is itrf->tirs (0) or tirs->itrf (1)
+        - Determines wether the transform is ITRF->TIRS (0) or TIRS->ITRF (1)
 
     Returns
     -------
@@ -243,18 +244,18 @@ def IAU_PolarMotion(rad_itrf, vel_itrf, gd_UTC, Transpose):
 
     # Transform Constants
     # From Ast Almonac, 2006?:B76
-    a_a = (0.12)  # Sexagesimal-Sec  # TODO: Replace with date specific data
-    a_c = (0.26)  # Sexagesimal-Sec  # TODO: Replace with date specific data
+    a_a = (0.12)  # Arcseconds  # TODO: Replace with date specific data
+    a_c = (0.26)  # Arcseconds  # TODO: Replace with date specific data
 
     # These from IERS Earth Orientation Data - EOP 14 C04 (IAU2000A) - Latest
     # https://datacenter.iers.org/eop/-/somos/5Rgv/latest/223
     # find way to get site data and store it for entirety of the scipt run then delete afterwords
-    Xp = np.deg2rad(-0.140682 * (1 / 3600))  # Sexagesimal-sec -> Radians # TODO: Replace with date specific data
-    Yp = np.deg2rad(0.333309 * (1 / 3600))  # Sexagesimal-sec -> Radians # TODO: Replace with date specific data
+    Xp = np.deg2rad(-0.140682 * (1 / 3600))  # Arcseconds -> Radians # TODO: Replace with date specific data
+    Yp = np.deg2rad(0.333309 * (1 / 3600))  # Arcseconds -> Radians # TODO: Replace with date specific data
 
     T_TT = np.linalg.norm((jd_TT - 2451545.0) / 36525)
     Sp = np.deg2rad((-0.0015 * (((a_c ** 2) / 1.2) + (a_a ** 2)) * T_TT) *
-                    (1 / 3600))  # Sexag->Radian
+                    (1 / 3600))  # Arcseconds->Radian
 
     # Initialize rotation matrix [W]
     W = np.matrix(('0 0 0; 0 0 0; 0 0 0'), dtype=np.float64)
@@ -284,7 +285,7 @@ def IAU_PolarMotion(rad_itrf, vel_itrf, gd_UTC, Transpose):
 
 def IAU_ERotationAngle(rad_tirs, vel_tirs, gd_UTC, Transpose):
     """
-    Transforms vectors from TIRS to CIRS frame following IAU-2010 conventions
+    Transform vectors between TIRS to CIRS frame following IAU-2010 conventions
 
     Parameters
     ----------
@@ -295,7 +296,7 @@ def IAU_ERotationAngle(rad_tirs, vel_tirs, gd_UTC, Transpose):
     gd_UTC : numpy matrix [6, 1] - [[Yr], [Mo], [Day], [Hr], [Min], [Sec]]
         - Gregorian Date
     Transpose : int of 0 or 1
-        - Determines wether the transform is tirs->cirs (0) or cirs->tirs (1)
+        - Determines wether the transform is TIRS->CIRS (0) or CIRS->TIRS (1)
 
     Returns
     -------
@@ -362,11 +363,9 @@ def IAU_ERotationAngle(rad_tirs, vel_tirs, gd_UTC, Transpose):
     return rad_cirs, vel_cirs
 
 
-#%%
-
 def IAU_PrecessionNutation(rad_cirs, vel_cirs, gd_UTC, Transpose):
     """
-    Transforms vectors from CIRS to GCRF frame following IAU-2010 conventions
+    Transform vectors between CIRS to GCRF frame following IAU-2010 conventions
 
     Parameters
     ----------
@@ -377,7 +376,7 @@ def IAU_PrecessionNutation(rad_cirs, vel_cirs, gd_UTC, Transpose):
     gd_UTC : numpy matrix [6, 1] - [[Yr], [Mo], [Day], [Hr], [Min], [Sec]]
         - Gregorian Date
     Transpose : int of 0 or 1
-        - Determines wether the transform is cirs->gcrf (0) or gcrf->cirs (1)
+        - Determines wether the transform is CIRS->GCRF (0) or GCRF->CIRS (1)
 
     Returns
     -------
@@ -426,13 +425,13 @@ def IAU_PrecessionNutation(rad_cirs, vel_cirs, gd_UTC, Transpose):
                      t_ms[3, 0], t_ms[4, 0], t_ms[5, 0], t_ms[6, 0])
     # Calculate time delta to adjust time from TT to TDB
     # TODO: Double check this time conversion
-    add_sec = (0.001657 * np.sin(628.3076 * T_TT + 6.2401))  # +
-#           (0.000022 * np.sin(575.3385 * T_TT + 4.2970)) +
-#           (0.000014 * np.sin(1256.6152 * T_TT + 6.1969)) +
-#           (0.000005 * np.sin(606.9777 * T_TT + 4.0212)) +
-#           (0.000005 * np.sin(52.9691 * T_TT + 0.4444)) +
-#           (0.000002 * np.sin(21.3299 * T_TT + 5.5431)) +
-#           (0.000010 * T_TT * np.sin(628.3076 * T_TT + 4.2490)))  # sec
+    add_sec = (0.001657 * np.sin(628.3076 * T_TT + 6.2401) +
+               (0.000022 * np.sin(575.3385 * T_TT + 4.2970)) +
+               (0.000014 * np.sin(1256.6152 * T_TT + 6.1969)) +
+               (0.000005 * np.sin(606.9777 * T_TT + 4.0212)) +
+               (0.000005 * np.sin(52.9691 * T_TT + 0.4444)) +
+               (0.000002 * np.sin(21.3299 * T_TT + 5.5431)) +
+               (0.000010 * T_TT * np.sin(628.3076 * T_TT + 4.2490)))  # sec
     TDB_add = timedelta(seconds=add_sec)
     TDB_f = TDB_i + TDB_add
     # Convert back to numpy array
@@ -454,7 +453,7 @@ def IAU_PrecessionNutation(rad_cirs, vel_cirs, gd_UTC, Transpose):
     # https://datacenter.iers.org/eop/-/somos/5Rgv/latest/223
     dX = -0.000205  # sexagesimal
     dY = -0.000136  # sexagesimal
-###############################################################################
+
     # Transform Constants
     # Determine angles for Earth's Nutation (r = 360 deg)
     Nu_term = np.zeros((14, 1), dtype=np.float)
@@ -486,7 +485,7 @@ def IAU_PrecessionNutation(rad_cirs, vel_cirs, gd_UTC, Transpose):
     # Reduce all values to withing 360 deg
     for j in range(np.size(Nu_term)):
         Nu_term[j, 0] = np.mod(Nu_term[j, 0], (360))  # deg
-###############################################################################
+
     # Import constant matrices
     Xcon = np.load('orbital_analyses/maia_tab5.2a.npy')
     Ycon = np.load('orbital_analyses/maia_tab5.2b.npy')
@@ -510,8 +509,29 @@ def IAU_PrecessionNutation(rad_cirs, vel_cirs, gd_UTC, Transpose):
         a_pS[i, 0] = sum(x * y for x, y in zip(Nu_term[:, 0], Scon[i, 3:17]))
         # Reduce withing 360 deg and convert to radians
         a_pS[i, 0] = np.deg2rad(np.mod(a_pS[i, 0], (360)))  # rad
-###############################################################################
-    # Calculate all portioned summations for X, Y, & s
+# =============================================================================
+#     x = 0
+#     for j in [33, 3, 25, 4, 1]:
+#         for i in range(0, j):  # s paramater
+#             a_pS[i + x, 0] = ((np.sum(Scon[0:i + 1, 3]) * Nu_term[0, 0]) +
+#                               (np.sum(Scon[0:i + 1, 4]) * Nu_term[1, 0]) +
+#                               (np.sum(Scon[0:i + 1, 5]) * Nu_term[2, 0]) +
+#                               (np.sum(Scon[0:i + 1, 6]) * Nu_term[3, 0]) +
+#                               (np.sum(Scon[0:i + 1, 7]) * Nu_term[4, 0]) +
+#                               (np.sum(Scon[0:i + 1, 8]) * Nu_term[5, 0]) +
+#                               (np.sum(Scon[0:i + 1, 9]) * Nu_term[6, 0]) +
+#                               (np.sum(Scon[0:i + 1, 10]) * Nu_term[7, 0]) +
+#                               (np.sum(Scon[0:i + 1, 11]) * Nu_term[8, 0]) +
+#                               (np.sum(Scon[0:i + 1, 12]) * Nu_term[9, 0]) +
+#                               (np.sum(Scon[0:i + 1, 13]) * Nu_term[10, 0]) +
+#                               (np.sum(Scon[0:i + 1, 14]) * Nu_term[11, 0]) +
+#                               (np.sum(Scon[0:i + 1, 15]) * Nu_term[12, 0]) +
+#                               (np.sum(Scon[0:i + 1, 16]) * Nu_term[13, 0]))
+#             # Reduce within 360 deg and convert to radians
+#             a_pS[i + x, 0] = np.deg2rad(np.mod(a_pS[i + x, 0], (360)))  # rad
+#         x = x + j
+#     # Calculate all portioned summations for X, Y, & s
+# =============================================================================
     # X paramater
     Xsum = np.asmatrix(np.zeros((np.size(Xcon, axis=0), 1), dtype=np.float))
     x = 0
@@ -551,57 +571,55 @@ def IAU_PrecessionNutation(rad_cirs, vel_cirs, gd_UTC, Transpose):
         Ssum[i + x, 0] = Sint
         x = x + j
         y = y + 1
-###############################################################################
+
     # X, Y, & s final calculations
     X = (-0.016617 + (2004.191898 * T_TT) - (0.4297829 * (T_TT ** 2)) -
          (0.19861834 * (T_TT ** 3)) + (0.000007578 * (T_TT ** 4)) +
          (0.0000059285 * (T_TT ** 5)) + np.sum(Xsum[0:1306, 0]) +
          np.sum(Xsum[1306:1559, 0]) + np.sum(Xsum[1559:1595, 0]) +
-         np.sum(Xsum[1595:1599, 0]) + np.sum(Xsum[1599:1600, 0]) + dX)  # Sexag
-    print(X)
+         np.sum(Xsum[1595:1599, 0]) + np.sum(Xsum[1599:1600, 0]) +
+         dX)  # arcseconds
     Y = (-0.006951 - (0.025896 * T_TT) - (22.4072747 * (T_TT ** 2)) +
          (0.00190059 * (T_TT ** 3)) + (0.001112526 * (T_TT ** 4)) +
          (0.0000001358 * (T_TT ** 5)) + np.sum(Ysum[0:962, 0]) +
          np.sum(Ysum[962:1239, 0]) + np.sum(Ysum[1239:1269, 0]) +
-         np.sum(Ysum[1269:1274, 0]) + np.sum(Ysum[1274:1275, 0]) + dY)  # Sexag
-    print(Y)
+         np.sum(Ysum[1269:1274, 0]) + np.sum(Ysum[1274:1275, 0]) +
+         dY)  # arcseconds
     s = (-((X * Y * 1e-06) / 2) + 0.000094 + (0.00380865 * T_TT) -
          (0.00012268 * (T_TT ** 2)) - (0.07257411 * (T_TT ** 3)) +
          (0.00002798 * (T_TT ** 4)) + (0.00001562 * (T_TT ** 5)) +
          np.sum(Ssum[0:33, 0]) + np.sum(Ssum[33:36, 0]) +
          np.sum(Ssum[36:61, 0]) + np.sum(Ssum[61:65, 0]) +
-         np.sum(Ssum[65:66, 0]))  # Sexagesimal
-    print(s)
-    X_r = (X * (1 / 3600))  # Rad
-    Y_r = (Y * (1 / 3600))  # Rad
-    d = np.arctan(np.sqrt(((X_r ** 2) + (Y_r ** 2)) /
-                          (1 - (X_r ** 2) - (Y_r ** 2))))  # deg
-    a = np.rad2deg(1 / (1 + np.cos(np.deg2rad(d))))  # deg
-    print(a)
+         np.sum(Ssum[65:66, 0]))  # arcseconds
 
-    Xr = dc(X * 1e-06)
-    Yr = dc(Y * 1e-06)
-    a_r = np.deg2rad(a)
-    sr = dc(s * 1e-06)
-    s_r = (s * (1 / 3600))  # rad
+    # Determine a from X and Y
+    Xr = np.deg2rad(X * (1 / 3600))  # Rad
+    Yr = np.deg2rad(Y * (1 / 3600))  # Rad
+    d = np.arctan(np.sqrt(((Xr ** 2) + (Yr ** 2)) /
+                          (1 - (Xr ** 2) - (Yr ** 2))))  # deg
+    a = np.rad2deg(1 / (1 + np.cos(np.deg2rad(d))))  # deg
+    # Convert s and a to radians before plugging into matrices
+    ar = np.deg2rad(a)  # rad
+    sr = np.deg2rad(s * (1 / 3600))  # rad
+
     # Initialize rotation matrix [P]
     P = np.matrix(('0 0 0; 0 0 0; 0 0 0'), dtype=np.float64)
-    P[0, 0] = (1 - a_r * (Xr ** 2))
-    P[0, 1] = (-a_r * Xr * Yr)
+    P[0, 0] = (1 - ar * (Xr ** 2))
+    P[0, 1] = (-ar * Xr * Yr)
     P[0, 2] = (Xr)
-    P[1, 0] = (-a_r * Xr * Yr)
-    P[1, 1] = (1 - a_r * (Yr ** 2))
+    P[1, 0] = (-ar * Xr * Yr)
+    P[1, 1] = (1 - ar * (Yr ** 2))
     P[1, 2] = (Yr)
     P[2, 0] = (-Xr)
     P[2, 1] = (-Yr)
-    P[2, 2] = (1 - a_r * ((Yr ** 2) + (Xr ** 2)))
+    P[2, 2] = (1 - ar * ((Yr ** 2) + (Xr ** 2)))
     # Initialize rotation matrix [N (ROT3)]
     N = np.matrix(('0 0 0; 0 0 0; 0 0 0'), dtype=np.float64)
-    N[0, 0] = np.cos(-s_r)
-    N[0, 1] = np.sin(-s_r)
+    N[0, 0] = np.cos(sr)
+    N[0, 1] = np.sin(sr)
     N[0, 2] = 0.
-    N[1, 0] = -np.sin(-s_r)
-    N[1, 1] = np.cos(-s_r)
+    N[1, 0] = -np.sin(sr)
+    N[1, 1] = np.cos(sr)
     N[1, 2] = 0.
     N[2, 0] = 0.
     N[2, 1] = 0.
@@ -618,8 +636,49 @@ def IAU_PrecessionNutation(rad_cirs, vel_cirs, gd_UTC, Transpose):
     return rad_gcrf, vel_gcrf
 
 
-#%%############################################################################
-###############################################################################
+def IAU_2000Reduction(rad, vel, gd_UTC, Transpose):
+    """
+    Transform vectors between ITRF to GCRF frame following IAU-2010 conventions
+
+    Parameters
+    ----------
+    rad : numpy matrix [3, 1] - [[X], [Y], [Z]]
+        - Radius vector defined in kilometers in the ITRF or GCRF frame
+    vel : numpy matrix [3, 1] - [[VX], [VY], [VZ]]
+        - Velocity vector defined in kilometers in the ITRF or GCRF frame
+    gd_UTC : numpy matrix [6, 1] - [[Yr], [Mo], [Day], [Hr], [Min], [Sec]]
+        - Gregorian Date
+    Transpose : int of 0 or 1
+        - Determines wether the transform is ITRF->GCRF (0) or GCRF->ITRF (1)
+
+    Returns
+    -------
+    rad : numpy matrix [3, 1] - [[X], [Y], [Z]]
+        - Radius vector defined in kilometers in the ITRF or GCRF frame
+        depending upon value of "Transpose"
+    vel : numpy matrix [3, 1] - [[VX], [VY], [VZ]]
+        - Velocity vector defined in kilometers in the ITRF or GCRF frame
+        depending upon value of "Transpose"
+
+    See Also
+    --------
+    FK5_ECFixed2J2000 : Transform from an earth fixed frame (ECEF) to an
+    earth based inertial frame (J2000) using the IAU-76/FK5 reduction
+
+    FK5_J20002ECFixed : Transform from an earth based inertial frame (J2000)
+    to an earth fixed frame (ECEF) using the IAU-76/FK5 reduction
+    """
+    # Entire IAU-2000 Reduction from ITRF -> GCRF/J2000
+    if Transpose == 0:
+        rad1, vel1 = IAU_PolarMotion(rad, vel, gd_UTC, Transpose)
+        rad2, vel2 = IAU_ERotationAngle(rad1, vel1, gd_UTC, Transpose)
+        rad3, vel3 = IAU_PrecessionNutation(rad2, vel2, gd_UTC, Transpose)
+    elif Transpose == 1:
+        rad1, vel1 = IAU_PrecessionNutation(rad, vel, gd_UTC, Transpose)
+        rad2, vel2 = IAU_ERotationAngle(rad1, vel1, gd_UTC, Transpose)
+        rad3, vel3 = IAU_PolarMotion(rad2, vel2, gd_UTC, Transpose)
+    return rad3, vel3
+
 ###############################################################################
 ###############################################################################
 
@@ -949,7 +1008,7 @@ def FK5_Precession(rad, vel, gd_UTC):
 
 
 def FK5_ECFixed2J2000(rad, vel, gd_UTC):
-    # Entire IAU-76/FK5 Reduction from ITFR -> GCRF/J2000
+    # Entire IAU-76/FK5 Reduction from ITRF -> GCRF/J2000
     fk_rad1, fk_vel1 = FK5_PolarMotion(rad, vel, gd_UTC)
     fk_rad2, fk_vel2 = FK5_SiderealTime(fk_rad1, fk_vel1, gd_UTC)
     fk_rad3, fk_vel3 = FK5_Nutation(fk_rad2, fk_vel2, gd_UTC)
