@@ -670,6 +670,50 @@ def FK5_PolarMotion(rad, vel, gd_UTC):
 
     # Time Adjustments
     jd_UTC, jd_UT1, jd_TAI, jd_TT = TimeAdjust(gd_UTC)
+    ###########################################################################
+    from urllib.request import urlopen
+    from bs4 import BeautifulSoup
+    import re
+    import numpy as np
+
+    data = "https://datacenter.iers.org/eop/-/somos/5Rgv/latest/223"
+
+    page = urlopen(data)
+    soup = BeautifulSoup(page)
+    data_string = str(soup.body.p.string)
+    data_list = re.split(r'\n+', data_string.rstrip('\n'))
+    del data_list[:10]
+
+    EOPCO4 = np.matrix(np.zeros((np.size(data_list), 16), dtype=float))
+    for n in range(np.size(data_list)):
+        EOPCO4[n, :] = np.fromstring(data_list[n], dtype=float, sep=" ")
+
+    np.save("EOPCO4.npy", EOPCO4)
+###############################################################################
+    from urllib.request import urlopen
+    from bs4 import BeautifulSoup
+    import re
+    import numpy as np
+
+    data = "http://maia.usno.navy.mil/ser7/tai-utc.dat"
+
+    page = urlopen(data)
+    soup = BeautifulSoup(page)
+    data_string = str(soup.body.p.string)
+    data_list = re.split(r'\n+', data_string.rstrip('\n'))
+    del data_list[:13]
+
+    EOPCO4 = np.matrix(np.zeros((np.size(data_list), 16), dtype=float))
+
+    for n in range(np.size(data_list)):
+        EOPCO4[n, :] = np.fromstring(data_list[n], dtype=float, sep=" ")
+###############################################################################
+    import os
+    if os.path.exists("orbital_analyses\EOPCO4.npy"):
+        os.remove("orbital_analyses\EOPCO4.npy")
+    else:
+        print("The file does not exist")
+    ###########################################################################
     # TODO: Need to use to determine constnts below from site at specific times
     # Call JD2Gregorian one you can read the below site
 
