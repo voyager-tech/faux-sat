@@ -1,6 +1,7 @@
 # Utilized Modules
 import numpy as np
 import time
+import os
 
 from orbital_analyses.Propagation import Prop_Cowell
 
@@ -84,6 +85,11 @@ for l in range(Req.Steps):
                                                       orbit_gd[:, l])
 
 sc_state, sc_batt_percent, sc_data_percent, boo, sc_vol, sc_mass = component_operations(fixed_r, fixed_v, orbit_jd, inSun, inContact, inCA, gs_inert)
+
+if os.path.exists("orbital_analyses\EOPCO4.npy"):
+    os.remove("orbital_analyses\EOPCO4.npy")
+elif os.path.exists("sample\EOPCO4.npy"):
+    os.remove("sample\EOPCO4.npy")
 
 t1 = time.time()
 print(t1 - t0)
