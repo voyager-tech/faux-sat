@@ -1,0 +1,3 @@
+numpy==1.15.2
+Pint==0.8.1
+poliastro==0.9.1
