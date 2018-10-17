@@ -1,37 +1,53 @@
-## Welcome to GitHub Pages
+# Faux-Sat
 
-You can use the [editor on GitHub](https://github.com/voyager-tech/faux-sat/edit/master/README.md) to maintain and preview the content for your website in Markdown files.
+Faux-Sat is a package intended to give users the ability to sinulate a satellite throughout its lifetime in space. Additionally, all of the functions that make up Faux-Sat have been built to tand on their own for use in user's own code.
 
-Whenever you commit to this repository, GitHub Pages will run [Jekyll](https://jekyllrb.com/) to rebuild the pages in your site, from the content in your Markdown files.
+## Getting Started
 
-### Markdown
+These instructions will get you a copy of the project up and running on your local machine for development and testing purposes. See deployment for notes on how to deploy the project on a live system.
 
-Markdown is a lightweight and easy-to-use syntax for styling your writing. It includes conventions for
+### Prerequisites
 
-```markdown
-Syntax highlighted code block
+All of the following are necessary to use Faux-Sat:
 
-# Header 1
-## Header 2
-### Header 3
+* [Python 3](https://www.python.org/downloads/) - Programming language used
 
-- Bulleted
-- List
 
-1. Numbered
-2. List
+### Installing
 
-**Bold** and _Italic_ and `Code` text
+Before running any of the scripts, users should ensure they have the requisite packages necessary for full functionality. 
 
-[Link](url) and ![Image](src)
+To check for requisite packages and install the proper versions of each (run from top of repo):
+
+```
+pip install -r requirements.txt
 ```
 
-For more details see [GitHub Flavored Markdown](https://guides.github.com/features/mastering-markdown/).
+For [git lfs](https://git-lfs.github.com/) stored files:
 
-### Jekyll Themes
+```
+git lfs install
+git lfs pull --all
+```
 
-Your Pages site will use the layout and styles from the Jekyll theme you have selected in your [repository settings](https://github.com/voyager-tech/faux-sat/settings). The name of this theme is saved in the Jekyll `_config.yml` configuration file.
+End with an example of getting some data out of the system or using it for a little demo
 
-### Support or Contact
+## Built With
 
-Having trouble with Pages? Check out our [documentation](https://help.github.com/categories/github-pages-basics/) or [contact support](https://github.com/contact) and we’ll help you sort it out.
+* [Python 3](https://www.python.org/) - Programming language used
+
+## Contributing
+
+
+
+## Authors
+
+* **Harley Norton** - [HarleyN13](https://github.com/HarleyN13)
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details
+
+## Acknowledgments
+
+* D. Vallado, `Fundamentals of Astrodynamics and Applications`. 4th ed., Microcosm Press, 2013.
