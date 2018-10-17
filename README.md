@@ -2,10 +2,6 @@
 
 Faux-Sat is a package intended to give users the ability to sinulate a satellite throughout its lifetime in space. Additionally, all of the functions that make up Faux-Sat have been built to tand on their own for use in user's own code.
 
-## Getting Started
-
-These instructions will get you a copy of the project up and running on your local machine for development and testing purposes. See deployment for notes on how to deploy the project on a live system.
-
 ### Prerequisites
 
 All of the following are necessary to use Faux-Sat:
