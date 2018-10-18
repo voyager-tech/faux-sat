@@ -1,6 +1,6 @@
 # Faux-Sat
 
-Faux-Sat is a package intended to give users the ability to sinulate a satellite throughout its lifetime in space. Additionally, all of the functions that make up Faux-Sat have been built to tand on their own for use in user's own code.
+Faux-Sat is a package intended to give users the ability to sinulate a satellite throughout its lifetime in space. Additionally, all of the functions that make up Faux-Sat have been built to stand on their own for use in user's own code.
 
 ### Prerequisites
 
