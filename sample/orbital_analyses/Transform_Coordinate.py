@@ -2,6 +2,10 @@
 import numpy as np
 from copy import deepcopy as dc
 from datetime import datetime, timedelta
+import os
+from urllib.request import urlopen
+from bs4 import BeautifulSoup
+import re
 
 from orbital_analyses.Transform_State import TimeAdjust
 from orbital_analyses.Transform_State import JD2Gregorian
@@ -242,16 +246,40 @@ def IAU_PolarMotion(rad_itrf, vel_itrf, gd_UTC, Transpose):
     # Time Adjustments
     jd_UTC, jd_UT1, jd_TAI, jd_TT = TimeAdjust(gd_UTC)
 
+    # Get Modified Julian Date from input GD
+    MJD_UTC = (jd_UTC - 2400000.5)
+    # Scrape IERS Data to get dUT1
+    if os.path.exists(r'orbital_analyses\EOPCO4.npy'):
+        EOPCO4 = np.load(r'orbital_analyses\EOPCO4.npy')
+    elif os.path.exists(r'EOPCO4.npy'):
+        EOPCO4 = np.load(r'EOPCO4.npy')
+    else:
+        EOP_scrape = "https://datacenter.iers.org/eop/-/somos/5Rgv/latest/224"  # TODO: Check to see if correct final data table
+        EOP_page = urlopen(EOP_scrape)
+        EOP_soup = BeautifulSoup(EOP_page, "lxml")
+        EOP_string = str(EOP_soup.body.p.string)
+        EOP_list = re.split(r'\n+', EOP_string.rstrip('\n'))
+        del EOP_list[:10]  # Delete initial description lines
+        EOPCO4 = np.matrix(np.zeros((np.size(EOP_list), 16), dtype=float))
+        for n in range(np.size(EOP_list)):  # convert to numpy matrix
+            EOPCO4[n, :] = np.fromstring(EOP_list[n], dtype=float, sep=" ")
+        np.save("EOPCO4.npy", EOPCO4)
+    EOP_index = np.searchsorted(np.ravel(EOPCO4[:, 3]), MJD_UTC)
+
+    # Check if date is exactly or greater than index value and edit if needed
+    if EOP_index == np.size(EOPCO4[:, 3]):
+        EOP_index = (EOP_index - 1)
+    elif MJD_UTC != EOPCO4[EOP_index, 3]:
+        EOP_index = (EOP_index - 1)
+
     # Transform Constants
     # From Ast Almonac, 2006?:B76
     a_a = (0.12)  # Arcseconds  # TODO: Replace with date specific data
     a_c = (0.26)  # Arcseconds  # TODO: Replace with date specific data
 
     # These from IERS Earth Orientation Data - EOP 14 C04 (IAU2000A) - Latest
-    # https://datacenter.iers.org/eop/-/somos/5Rgv/latest/223
-    # find way to get site data and store it for entirety of the scipt run then delete afterwords
-    Xp = np.deg2rad(-0.140682 * (1 / 3600))  # Arcseconds -> Radians # TODO: Replace with date specific data
-    Yp = np.deg2rad(0.333309 * (1 / 3600))  # Arcseconds -> Radians # TODO: Replace with date specific data
+    Xp = np.deg2rad((np.asscalar(EOPCO4[EOP_index, 4])) * (1 / 3600))
+    Yp = np.deg2rad((np.asscalar(EOPCO4[EOP_index, 5])) * (1 / 3600))
 
     T_TT = np.linalg.norm((jd_TT - 2451545.0) / 36525)
     Sp = np.deg2rad((-0.0015 * (((a_c ** 2) / 1.2) + (a_a ** 2)) * T_TT) *
@@ -328,10 +356,34 @@ def IAU_ERotationAngle(rad_tirs, vel_tirs, gd_UTC, Transpose):
     # Time Adjustments
     jd_UTC, jd_UT1, jd_TAI, jd_TT = TimeAdjust(gd_UTC)
 
-    # Transform Constants
-    # These from IERS Earth Orientation Data - EOP 14 C04 (IAU2000A) - Latest
-    # https://datacenter.iers.org/eop/-/somos/5Rgv/latest/223
-    LOD = (0.0015308)  # sec # TODO: Replace with date specific data
+    # Get Modified Julian Date from input GD
+    MJD_UTC = (jd_UTC - 2400000.5)
+    # Scrape IERS Data to get dUT1
+    if os.path.exists(r'orbital_analyses\EOPCO4.npy'):
+        EOPCO4 = np.load(r'orbital_analyses\EOPCO4.npy')
+    elif os.path.exists(r'EOPCO4.npy'):
+        EOPCO4 = np.load(r'EOPCO4.npy')
+    else:
+        EOP_scrape = "https://datacenter.iers.org/eop/-/somos/5Rgv/latest/224"  # TODO: Check to see if correct final data table
+        EOP_page = urlopen(EOP_scrape)
+        EOP_soup = BeautifulSoup(EOP_page, "lxml")
+        EOP_string = str(EOP_soup.body.p.string)
+        EOP_list = re.split(r'\n+', EOP_string.rstrip('\n'))
+        del EOP_list[:10]  # Delete initial description lines
+        EOPCO4 = np.matrix(np.zeros((np.size(EOP_list), 16), dtype=float))
+        for n in range(np.size(EOP_list)):  # convert to numpy matrix
+            EOPCO4[n, :] = np.fromstring(EOP_list[n], dtype=float, sep=" ")
+        np.save("EOPCO4.npy", EOPCO4)
+    EOP_index = np.searchsorted(np.ravel(EOPCO4[:, 3]), MJD_UTC)
+
+    # Check if date is exactly or greater than index value and edit if needed
+    if EOP_index == np.size(EOPCO4[:, 3]):
+        EOP_index = (EOP_index - 1)
+    elif MJD_UTC != EOPCO4[EOP_index, 3]:
+        EOP_index = (EOP_index - 1)
+
+    # This from IERS Earth Orientation Data - EOP 14 C04 (IAU2000A) - Latest
+    LOD = np.asscalar(EOPCO4[EOP_index, 7])  # sec
 
     E_w = np.matrix([[0., 0., (7.292115146706979e-05 * (1 - (LOD / 86400)))]])
     T_era = np.linalg.norm((2 * np.pi) * (0.7790572732640 +
@@ -670,63 +722,36 @@ def FK5_PolarMotion(rad, vel, gd_UTC):
 
     # Time Adjustments
     jd_UTC, jd_UT1, jd_TAI, jd_TT = TimeAdjust(gd_UTC)
-    ###########################################################################
-    from urllib.request import urlopen
-    from bs4 import BeautifulSoup
-    import re
-    import numpy as np
 
-    data = "https://datacenter.iers.org/eop/-/somos/5Rgv/latest/223"
-
-    page = urlopen(data)
-    soup = BeautifulSoup(page)
-    data_string = str(soup.body.p.string)
-    data_list = re.split(r'\n+', data_string.rstrip('\n'))
-    del data_list[:10]
-
-    EOPCO4 = np.matrix(np.zeros((np.size(data_list), 16), dtype=float))
-    for n in range(np.size(data_list)):
-        EOPCO4[n, :] = np.fromstring(data_list[n], dtype=float, sep=" ")
-
-    np.save("EOPCO4.npy", EOPCO4)
-###############################################################################
-    from urllib.request import urlopen
-    from bs4 import BeautifulSoup
-    import re
-    import numpy as np
-
-    data = "http://maia.usno.navy.mil/ser7/tai-utc.dat"
-
-    page = urlopen(data)
-    soup = BeautifulSoup(page)
-    data_string = str(soup.body.p.string)
-    data_list = re.split(r'\n+', data_string.rstrip('\n'))
-    del data_list[:13]
-
-    EOPCO4 = np.matrix(np.zeros((np.size(data_list), 16), dtype=float))
-
-    for n in range(np.size(data_list)):
-        EOPCO4[n, :] = np.fromstring(data_list[n], dtype=float, sep=" ")
-###############################################################################
-    import os
-    if os.path.exists("orbital_analyses\EOPCO4.npy"):
-        os.remove("orbital_analyses\EOPCO4.npy")
+    # Get Modified Julian Date from input GD
+    MJD_UTC = (jd_UTC - 2400000.5)
+    # Scrape IERS Data to get dUT1
+    if os.path.exists(r'orbital_analyses\EOPCO4.npy'):
+        EOPCO4 = np.load(r'orbital_analyses\EOPCO4.npy')
+    elif os.path.exists(r'EOPCO4.npy'):
+        EOPCO4 = np.load(r'EOPCO4.npy')
     else:
-        print("The file does not exist")
-    ###########################################################################
-    # TODO: Need to use to determine constnts below from site at specific times
-    # Call JD2Gregorian one you can read the below site
+        EOP_scrape = "https://datacenter.iers.org/eop/-/somos/5Rgv/latest/224"  # TODO: Check to see if correct final data table
+        EOP_page = urlopen(EOP_scrape)
+        EOP_soup = BeautifulSoup(EOP_page, "lxml")
+        EOP_string = str(EOP_soup.body.p.string)
+        EOP_list = re.split(r'\n+', EOP_string.rstrip('\n'))
+        del EOP_list[:10]  # Delete initial description lines
+        EOPCO4 = np.matrix(np.zeros((np.size(EOP_list), 16), dtype=float))
+        for n in range(np.size(EOP_list)):  # convert to numpy matrix
+            EOPCO4[n, :] = np.fromstring(EOP_list[n], dtype=float, sep=" ")
+        np.save("EOPCO4.npy", EOPCO4)
+    EOP_index = np.searchsorted(np.ravel(EOPCO4[:, 3]), MJD_UTC)
+
+    # Check if date is exactly or greater than index value and edit if needed
+    if EOP_index == np.size(EOPCO4[:, 3]):
+        EOP_index = (EOP_index - 1)
+    elif MJD_UTC != EOPCO4[EOP_index, 3]:
+        EOP_index = (EOP_index - 1)
 
     # These from IERS Earth Orientation Data - EOP 14 C04 (IAU2000A) - Latest
-    # https://datacenter.iers.org/eop/-/somos/5Rgv/latest/223
-
-    # Xp_d = (0.100751 * (0.000028 / 0.1))  # Degrees
-    # Xp = np.deg2rad(Xp_d)  # Radians
-    # Yp_d = (0.447751 * (0.000028 / 0.1))  # Degrees
-    # Yp = np.deg2rad(pm_Yp_d)  # Radians
-
-    Xp = (-0.140682 * (1 / 3600) * (np.pi / 180))  # Radians
-    Yp = (0.333309 * (1 / 3600) * (np.pi / 180))  # Radians
+    Xp = np.deg2rad((np.asscalar(EOPCO4[EOP_index, 4])) * (1 / 3600))
+    Yp = np.deg2rad((np.asscalar(EOPCO4[EOP_index, 5])) * (1 / 3600))
 
     ITRF2PEF = np.matrix(('0 0 0; 0 0 0; 0 0 0'), dtype=np.float)
     ITRF2PEF[0, 0] = (1)
