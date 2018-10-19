@@ -86,10 +86,10 @@ for l in range(Req.Steps):
 
 sc_state, sc_batt_percent, sc_data_percent, boo, sc_vol, sc_mass = component_operations(fixed_r, fixed_v, orbit_jd, inSun, inContact, inCA, gs_inert)
 
-if os.path.exists("orbital_analyses\EOPCO4.npy"):
-    os.remove("orbital_analyses\EOPCO4.npy")
-elif os.path.exists("sample\EOPCO4.npy"):
-    os.remove("sample\EOPCO4.npy")
+if os.path.exists(r'orbital_analyses\EOPCO4.npy'):
+    os.remove(r'orbital_analyses\EOPCO4.npy')
+elif os.path.exists(r'EOPCO4.npy'):
+    os.remove(r'EOPCO4.npy')
 
 t1 = time.time()
 print(t1 - t0)
