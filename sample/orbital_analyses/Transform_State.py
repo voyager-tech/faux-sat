@@ -1,6 +1,12 @@
 # Utilized Modules
 import numpy as np
 from copy import deepcopy as dc
+import os
+from urllib.request import urlopen
+from bs4 import BeautifulSoup
+import re
+from datetime import datetime, timedelta
+
 # ALL ASSUMED TO BE IN Stated Coordinate Systems
 # Must convert to appropriate coordinates before using these functions
 # Use functions in Transform_Coordinate.py for that
@@ -101,7 +107,6 @@ def Gregorian2JD(GD):
     # Initialize Vectors
     GD = np.matrix(GD)
     length = np.size(GD, axis=1)
-    JD = np.zeros((length, 1))
 
     for j in range(length):
         gj_1 = (367 * GD[0, j])
@@ -110,8 +115,8 @@ def Gregorian2JD(GD):
         gj_4 = (GD[2, j])
         gj_5 = (((((GD[5, j] / 60) + GD[4, j]) / 60) + GD[3, j]) / 24)
 
-        JD[j] = np.asmatrix(np.float64((gj_1) - (gj_2) + (gj_3) +
-                            (gj_4) + (1721013.5) + (gj_5)))
+        JD = np.asscalar(np.float64((gj_1) - (gj_2) + (gj_3) +
+                                    (gj_4) + (1721013.5) + (gj_5)))
     return JD
 
 
@@ -142,32 +147,78 @@ def TimeAdjust(GD):
     Microcosm Press, 2013.
     Alg. 16, pg. 195
     """
-    # Convert to other timeframes using values from these sites:
-    # https://datacenter.iers.org/eop/-/somos/5Rgv/latest/223
-    # TODO: Determine time deltas from site above dynamically
-    dUT1 = (-0.4399619)  # Seconds - EOPCO4
-    dAT = (32)  # Seconds - Astronomical Almanac
-    dTT = (32.184)  # Seconds
+    # Get Modified Julian Date from input GD
+    JD_UTC = np.asscalar(Gregorian2JD(np.asmatrix(GD)))
+    MJD_UTC = (JD_UTC - 2400000.5)
+    # Scrape IERS Data to get dUT1
+    if os.path.exists(r'orbital_analyses\EOPCO4.npy'):
+        EOPCO4 = np.load(r'orbital_analyses\EOPCO4.npy')
+    elif os.path.exists(r'EOPCO4.npy'):
+        EOPCO4 = np.load(r'EOPCO4.npy')
+    else:
+        EOP_scrape = "https://datacenter.iers.org/eop/-/somos/5Rgv/latest/224"  # TODO: Check to see if correct final data table
+        EOP_page = urlopen(EOP_scrape)
+        EOP_soup = BeautifulSoup(EOP_page, "lxml")
+        EOP_string = str(EOP_soup.body.p.string)
+        EOP_list = re.split(r'\n+', EOP_string.rstrip('\n'))
+        del EOP_list[:10]  # Delete initial description lines
+        EOPCO4 = np.matrix(np.zeros((np.size(EOP_list), 16), dtype=float))
+        for n in range(np.size(EOP_list)):  # convert to numpy matrix
+            EOPCO4[n, :] = np.fromstring(EOP_list[n], dtype=float, sep=" ")
+        np.save("EOPCO4.npy", EOPCO4)
+    EOP_index = np.searchsorted(np.ravel(EOPCO4[:, 3]), MJD_UTC)
 
-    # TODO: add in datetime handling for each of these transforms, if needed
-    # UTC
-    GD_UTC = np.asmatrix(dc(GD))
-    # UT1
-    GD_UT1 = np.asmatrix(dc(GD))
-    GD_UT1[5] = (GD_UT1[5] + dUT1)
-    # TAI
-    GD_TAI = np.asmatrix(dc(GD))
-    GD_TAI[5] = (GD_TAI[5] + dAT)
-    # TT
-    GD_TT = np.asmatrix(dc(GD))
-    GD_TT[5] = (GD_TT[5] + dAT + dTT)
+    # Scrape IERS Data to get dAT
+    if os.path.exists(r'orbital_analyses\deltaTA.npy'):
+        deltaTA = np.load(r'orbital_analyses\deltaTA.npy')
+    elif os.path.exists(r'deltaTA.npy'):
+        deltaTA = np.load(r'deltaTA.npy')
+    dTA_index = np.searchsorted(np.ravel(deltaTA[:, 3]), JD_UTC)
 
-    # Convert to Julian Date
-    JD_UTC = Gregorian2JD(GD_UTC)
-    JD_UT1 = Gregorian2JD(GD_UT1)
-    JD_TAI = Gregorian2JD(GD_TAI)
-    JD_TT = Gregorian2JD(GD_TT)
-    return(JD_UTC, JD_UT1, JD_TAI, JD_TT)
+    # Check if date is exactly or greater than index value and edit if needed
+    if EOP_index == np.size(EOPCO4[:, 3]):
+        EOP_index = (EOP_index - 1)
+    elif MJD_UTC != EOPCO4[EOP_index, 3]:
+        EOP_index = (EOP_index - 1)
+
+    if dTA_index == np.size(deltaTA[:, 3]):
+        dTA_index = (dTA_index - 1)
+    elif JD_UTC != deltaTA[dTA_index, 3]:
+        dTA_index = (dTA_index - 1)
+
+    # TODO: Currently date outside data range takes last value in data, change?
+    dUT1 = np.asscalar(EOPCO4[EOP_index, 6])  # Seconds
+    dAT = np.asscalar(deltaTA[dTA_index, 4])  # Seconds
+    dTT = (32.184)  # Seconds  # TODO: Does this change?
+    deltas = np.array([dUT1, dAT, (dAT + dTT)])
+
+    # Add time to GD_UTC
+    t_ms = np.asmatrix(np.zeros((7, 1), dtype=np.float64))
+    t_ms[0:5, 0] = GD[0:5, 0]
+    t_ms[5, 0] = np.floor(GD[5, 0])  # Seconds
+    t_ms[6, 0] = (np.mod(GD[5, 0], 1) * 1e6)  # Milliseconds
+    t_ms = t_ms.astype(int)
+    GD_utc = datetime(t_ms[0, 0], t_ms[1, 0], t_ms[2, 0], t_ms[3, 0],
+                      t_ms[4, 0], t_ms[5, 0], t_ms[6, 0])  # To datetime
+    # Calculate time delta to adjust time from TT to TDB
+    JD_deltas = np.zeros((3), dtype=float)
+    for i in range(np.size(deltas)):
+        add_sec = deltas[i]
+        GD_add = timedelta(seconds=add_sec)
+        GD_f = GD_utc + GD_add
+        # Convert back to numpy array
+        GD_np = np.datetime64(GD_f)
+        GD_new = np.asmatrix(np.zeros((6, 1), dtype=np.float64))
+        GD_new[0, 0] = GD_np.astype(object).year
+        GD_new[1, 0] = GD_np.astype(object).month
+        GD_new[2, 0] = GD_np.astype(object).day
+        GD_new[3, 0] = GD_np.astype(object).hour
+        GD_new[4, 0] = GD_np.astype(object).minute
+        GD_new[5, 0] = (GD_np.astype(object).second +
+                        (GD_np.astype(object).microsecond * 1e-6))
+        JD_deltas[i] = np.asscalar(Gregorian2JD(GD_new))
+
+    return JD_UTC, JD_deltas[0], JD_deltas[1], JD_deltas[2]
 
 
 def Keplerian2Perifocal(kep):
