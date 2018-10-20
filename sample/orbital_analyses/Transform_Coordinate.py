@@ -573,8 +573,8 @@ def IAU_PrecessionNutation(rad_cirs, vel_cirs, gd_UTC, Transpose):
                            (Xcon[i + x, 2] * 1e-06 * np.cos(a_pX[i + x, 0]))) *
                            (T_TT ** y))
         Xsum[i + x, 0] = Xint
-        x = x + j
-        y = y + 1
+        x += j
+        y += 1
     # Y paramater
     Ysum = np.asmatrix(np.zeros((np.size(Ycon, axis=0), 1), dtype=np.float))
     x = 0
@@ -586,8 +586,8 @@ def IAU_PrecessionNutation(rad_cirs, vel_cirs, gd_UTC, Transpose):
                            (Ycon[i + x, 2] * 1e-06 * np.cos(a_pY[i + x, 0]))) *
                            (T_TT ** y))
         Ysum[i + x, 0] = Yint
-        x = x + j
-        y = y + 1
+        x += j
+        y += 1
     # s paramater
     Ssum = np.asmatrix(np.zeros((np.size(Scon, axis=0), 1), dtype=np.float))
     x = 0
@@ -599,8 +599,8 @@ def IAU_PrecessionNutation(rad_cirs, vel_cirs, gd_UTC, Transpose):
                            (Scon[i + x, 2] * 1e-06 * np.cos(a_pS[i + x, 0]))) *
                            (T_TT ** y))
         Ssum[i + x, 0] = Sint
-        x = x + j
-        y = y + 1
+        x += j
+        y += 1
 
     # X, Y, & s final calculations
     X = (-0.016617 + (2004.191898 * T_TT) - (0.4297829 * (T_TT ** 2)) -

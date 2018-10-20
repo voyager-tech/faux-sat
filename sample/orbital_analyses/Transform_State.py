@@ -107,7 +107,6 @@ def Gregorian2JD(GD):
     # Initialize Vectors
     GD = np.matrix(GD)
     length = np.size(GD, axis=1)
-    JD = np.zeros((length, 1))
 
     for j in range(length):
         gj_1 = (367 * GD[0, j])
@@ -116,8 +115,8 @@ def Gregorian2JD(GD):
         gj_4 = (GD[2, j])
         gj_5 = (((((GD[5, j] / 60) + GD[4, j]) / 60) + GD[3, j]) / 24)
 
-        JD[j] = np.asmatrix(np.float64((gj_1) - (gj_2) + (gj_3) +
-                            (gj_4) + (1721013.5) + (gj_5)))
+        JD = np.asscalar(np.float64((gj_1) - (gj_2) + (gj_3) +
+                                    (gj_4) + (1721013.5) + (gj_5)))
     return JD
 
 

@@ -187,7 +187,7 @@ for j in range(Iterate):
         n_i = n_j
         sma_i = sma_j
         ecc_i = ecc_j
-        k = k + 1
+        k += 1
         # Check if SMA is smaller than R_per (Incompatibe Orbit)
         if sma_i.magnitude < R_per.magnitude:
             delta_sma = 0
