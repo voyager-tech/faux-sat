@@ -11,6 +11,14 @@ class FlagBasic:
         self.bool = boolean
 
 
+# Array Flag (refrences a single number as an attribute of the flag)
+class FlagValue:
+
+    def __init__(self, boolean, value):
+        self.bool = boolean
+        self.value = value
+
+
 # Array Flag (refrences an array as an attribute of the flag)
 class FlagArray:
 
