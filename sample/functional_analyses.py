@@ -9,7 +9,7 @@
 
 
 class ADC:
-
+    """ DocString here """
     def __init__(self, flag, vehicle_state, **kwargs):
 
     # Subsystem Functions (Modes)
@@ -26,7 +26,7 @@ class ADC:
     # 
 
 class Astrodynamics:
-
+    """ DocString here """
     def __init__(self, flag, vehicle_state, **kwargs):
 
     # Subsystem Functions (Modes)
@@ -41,7 +41,7 @@ class Astrodynamics:
     #
 
 class CDH:
-
+    """ DocString here """
     def __init__(self, flag, vehicle_state, **kwargs):
 
     # Subsystem Functions (Modes)
@@ -52,7 +52,7 @@ class CDH:
     # TODO: Represent all internal system messages being sent/recieved
 
 class Communication:
-
+    """ DocString here """
     def __init__(self, flag, vehicle_state, **kwargs):
 
     # Subsystem Functions (Modes)
@@ -66,7 +66,7 @@ class Communication:
 
 
 class Power:
-
+    """ DocString here """
     def __init__(self, flag, vehicle_state, **kwargs):
 
     # Subsystem Functions (Modes)
@@ -81,7 +81,7 @@ class Power:
 
 
 class Propulsion:
-
+    """ DocString here """
     def __init__(self, flag, vehicle_state, **kwargs):
 
     # Subsystem Functions (Modes)
@@ -95,7 +95,7 @@ class Propulsion:
     # 
 
 class Structure:
-
+    """ DocString here """
     def __init__(self, flag, vehicle_state, **kwargs):
 
     # Subsystem Functions (Modes)
@@ -105,7 +105,7 @@ class Structure:
     # 
 
 class Thermal:
-
+    """ DocString here """
     def __init__(self, flag, vehicle_state, **kwargs):
 
     # Subsystem Functions (Modes)
@@ -118,7 +118,7 @@ class Thermal:
     # 
 
 class UserDesined:
-
+    """ DocString here """
     def __init__(self, flag, vehicle_state, **kwargs):
 
     # Subsystem Functions (Modes)
@@ -131,7 +131,7 @@ class UserDesined:
 # Run each step to help determine the state of the spacecraft at the next step
 # Make private methods
 class General:
-
+    """ DocString here """
     def __init__(self, flag, vehicle_state, **kwargs):
 
     # Subsystem Functions (Modes)
@@ -144,4 +144,5 @@ class General:
     # In Sun (boolean)
     # In Ground Contact (Point & Area) (boolean)
     # Attitude (array)
+    # Always on sensor data (array)
     # 
