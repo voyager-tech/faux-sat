@@ -30,7 +30,7 @@ refrence_frame_i = None       # Choose from a list of supported refrence frames
 
 
 # %% Spacecraft Attitude
-
+# includes rate of change if not already included in quaternions
 
 # %% Propagator
 # Include Perturbations here
