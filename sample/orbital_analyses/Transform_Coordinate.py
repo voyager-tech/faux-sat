@@ -31,6 +31,7 @@ from orbital_analyses.Transform_State import Gregorian2JD
 # ***********************************************************************
 
 
+# TODO: add handing for acceleration transforms
 def ECFixed2Geodetic(rad):
     """
     Converts ECEF (Fixed, Earth Centered) coordinates to the Geodetic
@@ -96,6 +97,7 @@ def ECFixed2Geodetic(rad):
     return lla
 
 
+# TODO: add handing for acceleration transforms
 def Geodetic2ECFixed(lla):
     """
     Converts Geodetic coordinates to the ECEF (Fixed, Earth Centered)
@@ -150,6 +152,7 @@ def Geodetic2ECFixed(lla):
     return rad_ecef
 
 
+# TODO: add handing for acceleration transforms
 def Geodetic2Geocentric(lla_D):
     """
     Converts Geodetic coordinates to Geocentric coordinates.
@@ -201,6 +204,7 @@ def Geodetic2Geocentric(lla_D):
 ###############################################################################
 
 
+# TODO: add handing for acceleration transforms
 def IAU_PolarMotion(rad_itrf, vel_itrf, gd_UTC, Transpose):
     """
     Transform vectors between ITRF to TIRS frame following IAU-2010 conventions
@@ -311,6 +315,7 @@ def IAU_PolarMotion(rad_itrf, vel_itrf, gd_UTC, Transpose):
     return rad_tirs, vel_tirs
 
 
+# TODO: add handing for acceleration transforms
 def IAU_ERotationAngle(rad_tirs, vel_tirs, gd_UTC, Transpose):
     """
     Transform vectors between TIRS & CIRS frame following IAU-2010 conventions
@@ -415,6 +420,7 @@ def IAU_ERotationAngle(rad_tirs, vel_tirs, gd_UTC, Transpose):
     return rad_cirs, vel_cirs
 
 
+# TODO: add handing for acceleration transforms
 def IAU_PrecessionNutation(rad_cirs, vel_cirs, gd_UTC, Transpose):
     """
     Transform vectors between CIRS & GCRF frame following IAU-2010 conventions
@@ -666,6 +672,7 @@ def IAU_PrecessionNutation(rad_cirs, vel_cirs, gd_UTC, Transpose):
     return rad_gcrf, vel_gcrf
 
 
+# TODO: add handing for acceleration transforms
 def IAU_2000Reduction(rad, vel, gd_UTC, Transpose):
     """
     Transform vectors between ITRF & GCRF frame following IAU-2010 conventions
@@ -713,6 +720,7 @@ def IAU_2000Reduction(rad, vel, gd_UTC, Transpose):
 ###############################################################################
 
 
+# TODO: add handing for acceleration transforms
 def FK5_PolarMotion(rad, vel, gd_UTC):
     # Polar Motion (IAU-76/FK5) - ITRF -> PEF, Vallado pg. 223
 
@@ -769,6 +777,7 @@ def FK5_PolarMotion(rad, vel, gd_UTC):
     return rad_pef, vel_pef
 
 
+# TODO: add handing for acceleration transforms
 def FK5_SiderealTime(rad, vel, gd_UTC):
     # Sidereal Time (IAU-76/FK5) - PEF -> TOD, Vallado pg. 224
     rad_pef = dc(rad)
@@ -889,6 +898,7 @@ def FK5_SiderealTime(rad, vel, gd_UTC):
     return rad_tod, vel_tod
 
 
+# TODO: add handing for acceleration transforms
 def FK5_Nutation(rad, vel, gd_UTC):
     # Nutation (IAU-76/FK5) - TOD -> MOD, Vallado pg. 224
     rad_tod = dc(rad)
@@ -1011,6 +1021,7 @@ def FK5_Nutation(rad, vel, gd_UTC):
     return(rad_mod, vel_mod)
 
 
+# TODO: add handing for acceleration transforms
 def FK5_Precession(rad, vel, gd_UTC):
     # Precession (IAU-76/FK5) - TOD -> MOD, Vallado pg. 226
     rad_mod = dc(rad)
@@ -1054,6 +1065,8 @@ def FK5_Precession(rad, vel, gd_UTC):
     return(rad_gcrf, vel_gcrf)
 
 
+# TODO: add handing for acceleration transforms
+    # TODO: make like other transform series and remove all duplicate code below
 def FK5_ECFixed2J2000(rad, vel, gd_UTC):
     # Entire IAU-76/FK5 Reduction from ITRF -> GCRF/J2000
     fk_rad1, fk_vel1 = FK5_PolarMotion(rad, vel, gd_UTC)

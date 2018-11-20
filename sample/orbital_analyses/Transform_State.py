@@ -221,6 +221,7 @@ def TimeAdjust(GD):
     return JD_UTC, JD_deltas[0], JD_deltas[1], JD_deltas[2]
 
 
+# TODO: add handing for acceleration transforms
 def Keplerian2Perifocal(kep):
     """
     Converts Keplerian orbital elements to Rad / Vel in the Pericocal System
@@ -285,10 +286,12 @@ def Keplerian2Perifocal(kep):
     return rad, vel
 
 
+# TODO: add handing for acceleration transforms
 def Perifocal2Keplerian(rad, vel):
     return
 
 
+# TODO: add handing for acceleration transforms
 def Keplerian2Cartesian(kep):
     """
     Converts Keplerian orbital elements to Rad / Vel in the Cartesian System
@@ -382,6 +385,7 @@ def Keplerian2Cartesian(kep):
     return rad, vel
 
 
+# TODO: add handing for acceleration transforms
 def Cartesian2Keplerian(rad, vel):
     """
     Converts Rad / Vel in the Cartesian System to Keplerian orbital elements
@@ -456,9 +460,12 @@ def Cartesian2Keplerian(rad, vel):
     return kep
 
 
+# TODO: add handing for acceleration transforms
+# TODO: Make this exist please
 def Cartesian2Perifocal(rad, vel):
     return
 
 
+# TODO: add handing for acceleration transforms
 def Perifocal2Cartesian(rad, vel):
     return
