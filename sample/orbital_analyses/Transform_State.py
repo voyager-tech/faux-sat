@@ -148,7 +148,7 @@ def TimeAdjust(GD):
     Alg. 16, pg. 195
     """
     # Get Modified Julian Date from input GD
-    JD_UTC = np.asscalar(Gregorian2JD(np.asmatrix(GD)))
+    JD_UTC = (Gregorian2JD(np.asmatrix(GD)))
     MJD_UTC = (JD_UTC - 2400000.5)
     # Scrape IERS Data to get dUT1
     if os.path.exists(r'orbital_analyses\EOPCO4.npy'):
@@ -156,7 +156,8 @@ def TimeAdjust(GD):
     elif os.path.exists(r'EOPCO4.npy'):
         EOPCO4 = np.load(r'EOPCO4.npy')
     else:
-        EOP_scrape = "https://datacenter.iers.org/eop/-/somos/5Rgv/latest/224"  # TODO: Check to see if correct final data table
+        # EOP 14 C04 (IAU2000A)[May need occasional updating to propper link]
+        EOP_scrape = "https://datacenter.iers.org/data/latestVersion/224_EOP_C04_14.62-NOW.IAU2000A224.txt"  # TODO: Check to see if correct final data table
         EOP_page = urlopen(EOP_scrape)
         EOP_soup = BeautifulSoup(EOP_page, "lxml")
         EOP_string = str(EOP_soup.body.p.string)
@@ -216,7 +217,7 @@ def TimeAdjust(GD):
         GD_new[4, 0] = GD_np.astype(object).minute
         GD_new[5, 0] = (GD_np.astype(object).second +
                         (GD_np.astype(object).microsecond * 1e-6))
-        JD_deltas[i] = np.asscalar(Gregorian2JD(GD_new))
+        JD_deltas[i] = (Gregorian2JD(GD_new))
 
     return JD_UTC, JD_deltas[0], JD_deltas[1], JD_deltas[2]
 
