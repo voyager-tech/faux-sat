@@ -46,6 +46,8 @@ def Gauss_Jackson_Prop(r0_i, v0_i, GD, step):
     r0_2 = np.linalg.norm(np.inner(r0, r0))  # km^2
     v0_2 = np.linalg.norm(np.inner(v0, v0))  # km^2 / sec^2
     StepSec = (Step.to(u.sec)).magnitude
+    # set initial step value
+    h = 1  # TODO: confirm this isn't 0 to start
 
     ###########################################################################
     # TODO: Move all function definitions to top of main function or section?
@@ -92,8 +94,8 @@ def Gauss_Jackson_Prop(r0_i, v0_i, GD, step):
     # 8 (-4,4) rad/vel surrounding the epoch_0allado - ALg. 8, pg. 93
 
     # loop to calculate rad/vel vectors of 8 other positions defined by Step
-    pos = np.linspace(-4, 4, 9, dtype=int)
-    for i in pos:
+    n_range = np.linspace(-4, 4, 9, dtype=int)
+    for i in n_range:
         # Compute the Rad and Vel vectors at each step around the origin
         Tdelt = i * StepSec
         M_Enrgy0 = ((v0_2 / 2) - (E_Mu / r0_mag))  # TODO: Delete?
@@ -139,15 +141,96 @@ def Gauss_Jackson_Prop(r0_i, v0_i, GD, step):
     ###########################################################################
     # Evaluate the 9 acceeration vectors for the 9 states determined above
     # Acceleration w/o any perturbations
+    # TODO: Check to see if the method is appropriate for 2 body propagation
     for j in range(9):
         Acc_init[:, j] = -(Rad_init[:, j] *
                            (E_Mu / (np.linalg.norm(Rad_init[:, j]) ** 3)))
     # Incorporate Special Perturbations into acceleration model
     # Vallado Alg. 64, Pg. 591
     # TODO: Gather more accurate models of perturbative forces
-    
+
     ###########################################################################
-    # 3. Converging the accalarations
+    # 3. Converging the accelerations
+    # Import all coefficient arrays
+    # Eigth order summed adams coefficients in Ordinate Form: a(j,k), b(j,k)
+    a = np.load(r'orbital_analyses\coefficient_matrices\gauss_jackson_prop\GJ_a_coeff.npy')
+    b = np.load(r'orbital_analyses\coefficient_matrices\gauss_jackson_prop\GJ_b_coeff.npy')
+
+    # Initialize all loop arrays and variables before loop
+    h = 1  # h is the step (t_n = t_0 + nh) pg. 334
+    s_n = np.array(np.zeros([3, 9]))
+    S_n = np.array(np.zeros([3, 9]))
+    rad_int = np.array(np.zeros([3, 9]))
+    vel_int = np.array(np.zeros([3, 9]))
+    acc_int_magnitude = np.array(np.zeros([1, 9]))
+#    acc_int = np.asarray(dc(Acc_init))
+    diff = 1
+    acc_error = 1
+
+    # Loop to converge accelerations
+    while diff != 0:
+        acc_error1 = dc(acc_error)
+        # Calculate s_0 from C1
+        C1 = ((v0_i / h) +
+              np.transpose(np.transpose(Acc_init[:, 4] / 2) -
+                           np.dot(b[4, :], np.transpose(Acc_init))))
+        s_n[:, 4] = np.transpose(C1 - (Acc_init[:, 4] / 2))  # equal to C'1
+        # Calculate s_n for -4 <= n <= 4
+        for n in range(1, 5):
+            # Positive n value
+            s_n[:, n + 4] = (s_n[:, n + 3] +
+                             np.transpose((Acc_init[:, n + 3] +
+                                           Acc_init[:, n + 4]) / 2))
+            # Negative n value
+            s_n[:, -n + 4] = (s_n[:, -n + 5] +
+                              np.transpose((Acc_init[:, -n + 5] +
+                                            Acc_init[:, -n + 4]) / 2))
+        # Calculate S_0 from C2 and C1
+        C2 = ((r0_i / (h ** 2)) + (C1) -
+              np.transpose(a[4, :] * np.transpose(Acc_init)))
+        S_n[:, 4] = np.transpose(C2 - C1)
+        # Calculate S_n for -4 <= n <= 4
+        for n in range(1, 5):
+            # Positive n value
+            S_n[:, n + 4] = (S_n[:, n + 3] + s_n[:, n + 3] +
+                             np.transpose(Acc_init[:, n + 3] / 2))
+            # Negative n value
+            S_n[:, -n + 4] = (S_n[:, -n + 5] - s_n[:, -n + 5] +
+                              np.transpose(Acc_init[:, -n + 5] / 2))
+        # Calculate redius and velocity again using new s0 & S0 values
+        # This is used to test the convergence of the accelerations
+        for n in range(9):
+            vel_int[:, n] = (h * (s_n[:, n] +
+                                  (b[n, :] * np.transpose(Acc_init))))
+            rad_int[:, n] = ((h ** 2) * (S_n[:, n] +
+                                         (a[n, :] * np.transpose(Acc_init))))
+        # Evaluate the updated acceleration using appropriate force models
+        # TODO: Make into loop with above section here until convergence
+        for j in range(9):
+            Acc_init[:, j] = -np.reshape(rad_int[:, j] *
+                                         (E_Mu /
+                                          (np.linalg.norm(rad_int[:, j]) **
+                                           3)), (3, -1))
+        # Determine error from acc_0
+        for i in range(9):
+            acc_int_magnitude[0, i] = np.linalg.norm(Acc_init[:, i])
+        acc_error = np.linalg.norm(acc_int_magnitude - acc_int_magnitude[0, 4])
+        diff = acc_error1 - acc_error
+
+    # %% Predictor
+    # Calculate S_1 with new, converged accelerations
+    
+
+
+
+
+
+
+
+
+
+
+
 
 
 
