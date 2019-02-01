@@ -2,9 +2,11 @@
 import numpy as np
 from orbital_analyses import u
 from copy import deepcopy as dc
+from datetime import datetime, timedelta
 import Requirements as Req
 
 from orbital_analyses.Transform_State import Gregorian2JD
+from orbital_analyses.Transform_Coordinate import IAU_2000Reduction
 
 # Constants
 # TODO: Import the constants file later
@@ -13,42 +15,52 @@ E_Mu = 398600.4418          # Earth Mu (km^3 / sec^2)
 
 # Determine Inital State
 # Initial Rad / Vel - R0, V0 and epoch
-# TODO: Add in handling if rad and vel given as 3x1
+# TODO: Add in handling if rad and vel given as 3x1 (or handle on input script)
 # r0 = (Req.Rad).magnitude  # km
 r0 = np.array([1949.7385039, -5139.97811485, -4852.9027131])  # km
 # v0 = (Req.Vel).magnitude  # km / sec
 v0 = np.array([-6.57485096794, 0.215327040815, -3.14995010529])  # km / sec
 # EpochGD_0 = Req.GD_UTC  # Gregorian Date
-EpochGD_0 = np.array([2004, 4, 6, 0, 0, 0])  # Gregorian Date
-# TODO: Gregorian2JD needs to be anle to handle arrays of 1,6
-EpochJD_0 = Gregorian2JD(EpochGD_0.reshape(6, 1))  # Julian Date
+Epoch_GD0 = np.array([2004, 4, 6, 0, 0, 0])  # Gregorian Date
+Epoch_JD0 = Gregorian2JD(Epoch_GD0)  # Julian Date # TODO: Remove?
 # Step = Req.Ssize
-step = 2 * u.min
-steps = 5000
+step_size = 1 * u.min
+steps = 1440
+accuracy = 1e-012
+max_iterations = 50
 
+# TODO: Include time at each state into iterations and output file
+# Use TimeAdjust type code (or old propagator) and make into a function
 ############################################################################
-GD = dc(EpochGD_0)
 # %%
 
 
-def Gauss_Jackson_Prop(r0_i, v0_i, GD, step, steps, max_iterations=50, accuracy=1e-6):
-    # An 8th order integrator corrector for propagation
+def Gauss_Jackson_Prop(r0, v0, Epoch_GD0, step_size, steps, max_iterations=50, accuracy=1e-12):
+    # TODO: Add docstring
+    # Input: Initial values in inertial frame (J2000eq)
+    # Output: Values in inertial frame (J2000eq)
+    # https://drum.lib.umd.edu/bitstream/handle/1903/2202/2004-berry-healy-jas.pdf?sequence=7&isAllowed=y
+    # An 8th order numerical integrator corrector for propagation
     # 1. Use f & g series to calculate 8 (-4,4) rad/vel surrounding the epoch_0
     # Initialize arrays to place all calculated state vectors into
     rad = np.zeros((steps + 1, 3), dtype=float)
     vel = np.zeros((steps + 1, 3), dtype=float)
     acc = np.zeros((steps + 1, 3), dtype=float)
+    GD = np.zeros((steps + 1, 6), dtype=float)
     frame = []
     # Initialize temp array for calculating convergence at each step
+    rad_temp_inertial = np.zeros((9, 3), dtype=float)
+    vel_temp_inertial = np.zeros((9, 3), dtype=float)
     rad_temp = np.zeros((9, 3), dtype=float)
     vel_temp = np.zeros((9, 3), dtype=float)
     acc_temp = np.zeros((9, 3), dtype=float)
+    GD_temp = dc(Epoch_GD0)
     # Determine all other variables needed for loop
     r0_mag = np.linalg.norm(r0)
     v0_2 = np.inner(v0, v0)  # km^2 / sec^2
     # Set initial step value
     # TODO: Add coditional if step has no units
-    h = ((step.to(u.sec)).magnitude)
+    h = ((step_size.to(u.sec)).magnitude)
 
     ###########################################################################
     # TODO: Move all function definitions to top of main function or section?
@@ -131,20 +143,72 @@ def Gauss_Jackson_Prop(r0_i, v0_i, GD, step, steps, max_iterations=50, accuracy=
         vel_twoBod = ((f_dot * r0) + (g_dot * v0))
         # Place rad / vel vectors into matrices
         if n == 0:
-            rad_temp[4, :] = r0
-            vel_temp[4, :] = v0
+            rad_temp[4, :] = r0  # TODO: Change to rad_temp_inertial
+            vel_temp[4, :] = v0  # TODO: Change to vel_temp_inertial
         else:
-            rad_temp[n + 4, :] = rad_twoBod
-            vel_temp[n + 4, :] = vel_twoBod
+            rad_temp[n + 4, :] = rad_twoBod  # TODO: Change to rad_temp_inertial
+            vel_temp[n + 4, :] = vel_twoBod  # TODO: Change to vel_temp_inertial
+        # Convert rad and vel to Fixed frame (ECEF) from their Inertial frame
+        #for m in range(9):
+        #    rad_temp[m, :], vel_temp[m, :] = IAU_2000Reduction(rad_temp_inert[m, :], vel_temp_inert[m, :], gd_UTC, 1)
 
 ###############################################################################
     # 2. Evaluate 9 acceeration vectors for the 9 states determined above
     # Acceleration w/o any perturbations
     # 2 body propagation
     # TODO: With preturbations, just make this evaluation a callable function
+    # Does two_body acceleration exist when others are present? (Yes?)
+    def evaluate_accel(rad, vel, bodies, J2=0, drag=0, three_body=0, srp=0):
+        # TODO: Docstring here
+        # Initialize all acceleration vectors
+        acc_2body = np.zeros((len(rad), 3), dtype=float)
+        acc_J2 = np.zeros(3, dtype=float)
+        acc_drag = np.zeros(3, dtype=float)
+        acc_3body = np.zeros(3, dtype=float)
+        acc_srp = np.zeros(3, dtype=float)
+        # Evaluate 2-body accelerations
+        for j in range(len(rad)):
+            acc_2body[j, :] = -((rad[j, :] * E_Mu) /
+                                (np.linalg.norm(rad[j, :]) ** 3))
+        # TODO: add error for asking for J2 without 2body (any without 2 body?)
+        # If selected, evaluate J2 accelerations (Planetary oblateness (grav.))
+        if J2 == 1:
+            0
+        # If selected, evaluate drag accelerations (Atmosphereic)
+        if drag == 1:
+            0
+        # If selected, evaluate 3-body accelerations (Ex: Luna)
+        if three_body == 1:
+            # Collect Mu values of all requested bodies
+            # TODO: Create and import dict of bodies with their grav paramaters
+            bodies_Mu = np.zeros(len(bodies), dtype=float)
+            # TODO: Remove dict below once its an import
+            GRAV_PARAMATERS = {
+                    'sun': 1.32712440018e11,
+                    'mercury': 2.2032e4,
+                    'venus': 3.24859e5,
+                    'earth': 3.986004418e5,
+                    'luna': 4.9048695e3,
+                    'mars': 4.282837e4,
+                    'jupiter': 1.26686534e8,
+                    'saturn': 3.7931187e7,
+                    'uranus': 5.793939e6,
+                    'neptune': 6.836529e6,
+                    'pluto': 8.71e2}  # km^3 / sec^2
+            for j in range(len(bodies)):
+                bodies_Mu[j] = GRAV_PARAMATERS[bodies[j]]
+            
+                
+        # If selected, evaluate srp accelerations (Solar Radiation Pressure)
+        if srp == 1:
+            0
+        # Sum all calculated accelerations
+
+        return
+
     for j in range(9):
-        acc_temp[j, :] = -(rad_temp[j, :] *
-                           (E_Mu / (np.linalg.norm(rad_temp[j, :]) ** 3)))
+        acc_temp[j, :] = -((rad_temp[j, :] * E_Mu) /
+                           (np.linalg.norm(rad_temp[j, :]) ** 3))
     # Incorporate Special Perturbations into acceleration model
     # Vallado Alg. 64, Pg. 591
     # TODO: Gather more accurate models of perturbative forces
@@ -177,10 +241,9 @@ def Gauss_Jackson_Prop(r0_i, v0_i, GD, step, steps, max_iterations=50, accuracy=
     S_0 = (C2 - C1)
     # Begin while loop for acceleration convergence
     while diff_acc >= accuracy:
-        # acc_int1 = np.zeros((3, 9), dtype=float)
         # 3b
-        s_n = np.zeros([9, 3], dtype=float)
-        S_n = np.zeros([9, 3], dtype=float)
+        s_n = np.zeros((9, 3), dtype=float)
+        S_n = np.zeros((9, 3), dtype=float)
         s_n[4, :] = s_0
         S_n[4, :] = S_0
         for n in range(1, 5):
@@ -198,8 +261,8 @@ def Gauss_Jackson_Prop(r0_i, v0_i, GD, step, steps, max_iterations=50, accuracy=
             S_n[-n + 4, :] = (S_n[-n + 5, :] - s_n[-n + 5, :] +
                               (acc_temp[-n + 5, :] / 2))
         # 3b.ii,iii. Calculate a_sum & b_sum using the arrays, a & b
-        a_sum = np.zeros([9, 3], dtype=float)
-        b_sum = np.zeros([9, 3], dtype=float)
+        a_sum = np.zeros((9, 3), dtype=float)
+        b_sum = np.zeros((9, 3), dtype=float)
         for n in range(9):
             # Calculate b_sum
             for k in range(9):
@@ -223,6 +286,7 @@ def Gauss_Jackson_Prop(r0_i, v0_i, GD, step, steps, max_iterations=50, accuracy=
     rad[0, :] = rad_temp[4, :]
     vel[0, :] = vel_temp[4, :]
     acc[0, :] = acc_temp[4, :]
+    GD[0, :] = Epoch_GD0
     # Function to check what the actual frame is
     frame.append('ECEF')
 
@@ -230,7 +294,6 @@ def Gauss_Jackson_Prop(r0_i, v0_i, GD, step, steps, max_iterations=50, accuracy=
     step_current = 0
     for s in range(1, steps + 1):
         step_current += 1
-        print("Current Step=%s" % step_current)
         # 4. Calculate S_step
         S_step = (S_n[8, :] + s_n[8, :] + (acc_temp[8, :] / 2))
         # 5,6. Calculate b_sum_np1, a_sum_np1 with acceleration alterations
@@ -266,6 +329,7 @@ def Gauss_Jackson_Prop(r0_i, v0_i, GD, step, steps, max_iterations=50, accuracy=
         # Loop while radius and velocity calcs have not converged
         while diff_rad >= accuracy and diff_vel >= accuracy and iteration <= max_iterations:
             iteration += 1
+            #print("Iteration = %s" % iteration)  # TODO: Remove
             # 10.a Calculate s_step and S_step for the n value
             s_step = (s_n[8, :] + ((acc_temp[7, :] + acc_temp[8, :]) / 2))
             S_step = (S_n[8, :] + s_n[8, :] + (acc_temp[8, :] / 2))
@@ -283,6 +347,7 @@ def Gauss_Jackson_Prop(r0_i, v0_i, GD, step, steps, max_iterations=50, accuracy=
             # 10.d Sum results of 10.a, 10.b, 10.c to get rad and vel step
             vel_step1 = (h * (s_step + b_sum_4 + b_sum_step))
             rad_step1 = ((h ** 2) * (S_step + (a_sum_4 + a_sum_step)))
+            #print("Rad Step = %s" % rad_step1)  # TODO: Remove
             # 10.e Test convergence of rad and vel vectors
             diff_vel = np.linalg.norm(vel_step - vel_step1)
             diff_rad = np.linalg.norm(rad_step - rad_step1)
@@ -307,7 +372,31 @@ def Gauss_Jackson_Prop(r0_i, v0_i, GD, step, steps, max_iterations=50, accuracy=
         vel[s, :] = vel_temp[4, :]
         acc[s, :] = acc_temp[4, :]
         frame.append('ECEF')
+        #######################################################################
+        # Calculate gregorian date at new step and store in output array
+        t_ms = np.zeros(7, dtype=float)
+        t_ms[0:5] = GD_temp[0:5]
+        t_ms[5] = np.floor(GD_temp[5])  # Seconds
+        t_ms[6] = (np.mod(GD_temp[5], 1) * 1e6)  # Milliseconds
+        t_ms = t_ms.astype(int)
+        GD_dt = datetime(t_ms[0], t_ms[1], t_ms[2], t_ms[3],
+                         t_ms[4], t_ms[5], t_ms[6])  # To datetime
+        # Using h, add appropriate amount of time and calculate new date
+        GD_add = timedelta(seconds=h)
+        GD_stepped = GD_dt + GD_add
+        # Convert back to numpy array and store
+        GD_np = np.datetime64(GD_stepped)
+        GD_new = np.zeros(6, dtype=float)
+        GD_new[0] = GD_np.astype(object).year
+        GD_new[1] = GD_np.astype(object).month
+        GD_new[2] = GD_np.astype(object).day
+        GD_new[3] = GD_np.astype(object).hour
+        GD_new[4] = GD_np.astype(object).minute
+        GD_new[5] = (GD_np.astype(object).second +
+                     (GD_np.astype(object).microsecond * 1e-6))
+        GD[s, :] = GD_new
+        GD_temp = GD[s, :]
 
-    # %% Outputs - Save all dictionary entries into tuple
-    location_c = (rad, vel, acc, frame)
+    # Outputs - Save all dictionary entries into tuple
+    location_c = (GD, rad, vel, acc, frame)
     return location_c
