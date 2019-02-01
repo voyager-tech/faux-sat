@@ -8,22 +8,23 @@ import numpy as np
 # Functional Definitions/Functions
 # TYPE = constants.TYPE
 
-
-def array_converter(init):
-    if helpers.step == 0:
-        import inspect
-        paramater_value = inspect.getfullargspec(init)[0]
-        paramater_name = inspect.getfullargspec(init)[3]
-        print(paramater_value)
-        print(paramater_name)
-
-        def wrapper(self, *args):
-            for i in range(len(paramater_value) - 1):
-                if type(paramater_value[i + 1]) != constants.TYPE:  # Handing for nonetype?
-                    paramater_value[i + 1] = np.asarray(paramater_value[i + 1])
-                setattr(self, paramater_name[i + 1], paramater_value[i + 1])
-            init(self, *args)
-        return wrapper
+# =============================================================================
+# def array_converter(init):
+#     if helpers.step == 0:
+#         import inspect
+#         paramater_value = inspect.getfullargspec(init)[0]
+#         paramater_name = inspect.getfullargspec(init)[3]
+#         print(paramater_value)
+#         print(paramater_name)
+#
+#         def wrapper(self, *args):
+#             for i in range(len(paramater_value) - 1):
+#                 if type(paramater_value[i + 1]) != constants.TYPE:  # Handing for nonetype?
+#                     paramater_value[i + 1] = np.asarray(paramater_value[i + 1])
+#                 setattr(self, paramater_name[i + 1], paramater_value[i + 1])
+#             init(self, *args)
+#         return wrapper
+# =============================================================================
 
 # Subsystem Definitions
 
