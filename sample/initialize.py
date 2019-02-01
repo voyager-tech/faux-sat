@@ -1,20 +1,25 @@
 # Modules Utilized
 import numpy as np
+from orbital_analyses import u  # Pint Units
 
 # Script to be used for setting initial state as well as component data
 # Also needs to handle user analysis/subsystem/component creation
 
 # TODO: Find a good way to have users input all of this data
 # TODO: Find a good way to represent data in system (Classes?)
+# TODO: Determine default values for as many points as possible
 
 # %% Initial Orbital Values
+# TODO: Convert all to rad, vel in km and km/sec in the inertial frame
 radius_i = np.array([[],      # i component of radius vector
                      [],      # j component of radius vector
                      []])     # k component of radius vector
+radius_unit = ()  # u.km, u.m, u.ft, u.mi
 
 velocity_i = np.array([[],    # i component of velocity vector
                        [],    # j component of velocity vector
                        []])   # k component of velocity vector
+velocity_unit = ()  # u.km/u.sec, u.m/u.sec, u.ft/u.sec, u.mi/u.hr
 # OR
 keplerian_i = np.array([[],   # Semi-Major Axis (sma)
                         [],   # Eccentricity (ecc)
@@ -23,14 +28,38 @@ keplerian_i = np.array([[],   # Semi-Major Axis (sma)
                         [],   # Argument of Periapsis (AOP)
                         []])  # True Anomaly (TA)
 # AND
-refrence_frame_i = None       # Choose from a list of supported refrence frames
+refrence_frame_i = ()       # Choose from a list of supported refrence frames
 
 # %% Time
 # Gregorian Date / Julian Date / Local Time + timezone
-
+# TODO: Convert to JD
+julian_date = ()
+# OR
+mod_julian = ()
+# OR
+gregorian_date_UTC = np.array([[],   # Year
+                               [],   # Month
+                               [],   # Day
+                               [],   # Hour
+                               [],   # Minute
+                               []])  # Second w/ decimal
+# OR
+local_time = [np.array([[],   # Year
+                        [],   # Month
+                        [],   # Day
+                        [],   # Hour
+                        [],   # Minute
+                        []]),  # Second w/ decimal
+              ()]  # Timezone from list of timezones
 
 # %% Spacecraft Attitude
 # includes rate of change if not already included in quaternions
+# TODO: Convert to quaternions
+quaternion = np.array([[qs],
+                       [qx],
+                       [qy],
+                       [qz]])
+
 
 # %% Propagator
 # Include Perturbations here
