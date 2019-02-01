@@ -11,7 +11,7 @@ from datetime import datetime, timedelta
 # Must convert to appropriate coordinates before using these functions
 # Use functions in Transform_Coordinate.py for that
 
-
+# %% # TODO: Needs Transform to arrays from matrices
 def JD2Gregorian(JD):
     """
     Converts Julian Date to Gregorian Date Format.
@@ -78,7 +78,7 @@ def JD2Gregorian(JD):
         GD[5, i] = ((tau - GD[3, i] - (GD[4, i] / 60)) * 3600)
     return np.asmatrix(GD)
 
-
+# %% GOOD on arrays
 def Gregorian2JD(GD):
     """
     Converts Julian Date to Gregorian Date Format.
@@ -86,12 +86,12 @@ def Gregorian2JD(GD):
 
     Parameters
     ----------
-    GD : array_like [6, n]
+    GD : array_like [n, 6]
         - Can handle a numpy matrix of n Gregorian Dates as an input
 
     Returns
     -------
-    JD : numpy matrix [1, n]
+    JD : numpy matrix [n]
         - Returns values as floats due to Sec having decimal values
 
     See Also
@@ -105,21 +105,35 @@ def Gregorian2JD(GD):
         - Alg. 14, pg. 183
     """
     # Initialize Vectors
-    GD = np.matrix(GD)
-    length = np.size(GD, axis=1)
+    # Determine how many date entries are imputted
+    try:
+        GD.shape[1]
+    except IndexError:
+        entries = 1
+    else:
+        entries = GD.shape[0]
 
-    for j in range(length):
-        gj_1 = (367 * GD[0, j])
-        gj_2 = np.int((7 * (GD[0, j] + np.int((GD[1, j] + 9) / 12))) / 4)
-        gj_3 = np.int((275 * GD[1, j]) / 9)
-        gj_4 = (GD[2, j])
-        gj_5 = (((((GD[5, j] / 60) + GD[4, j]) / 60) + GD[3, j]) / 24)
-
+    if entries == 1:
+        gj_1 = (367 * GD[0])
+        gj_2 = np.int((7 * (GD[0] + np.int((GD[1] + 9) / 12))) / 4)
+        gj_3 = np.int((275 * GD[1]) / 9)
+        gj_4 = (GD[2])
+        gj_5 = (((((GD[5] / 60) + GD[4]) / 60) + GD[3]) / 24)
         JD = np.asscalar(np.float64((gj_1) - (gj_2) + (gj_3) +
                                     (gj_4) + (1721013.5) + (gj_5)))
+    else:
+        JD = np.zeros(entries, dtype=float)
+        for j in range(entries):
+            gj_1 = (367 * GD[j, 0])
+            gj_2 = np.int((7 * (GD[j, 0] + np.int((GD[j, 1] + 9) / 12))) / 4)
+            gj_3 = np.int((275 * GD[j, 1]) / 9)
+            gj_4 = (GD[j, 2])
+            gj_5 = (((((GD[j, 5] / 60) + GD[j, 4]) / 60) + GD[j, 3]) / 24)
+            JD[j] = np.asscalar(np.float64((gj_1) - (gj_2) + (gj_3) +
+                                           (gj_4) + (1721013.5) + (gj_5)))
     return JD
 
-
+# %% # TODO: Needs Transform to arrays from matrices
 def TimeAdjust(GD):
     """
     Converts UTC Gregorian Date to UT1, TAI, and TT timeframes.
@@ -221,7 +235,7 @@ def TimeAdjust(GD):
 
     return JD_UTC, JD_deltas[0], JD_deltas[1], JD_deltas[2]
 
-
+# %% # TODO: Needs Transform to arrays from matrices
 # TODO: add handing for acceleration transforms
 def Keplerian2Perifocal(kep):
     """
@@ -286,12 +300,12 @@ def Keplerian2Perifocal(kep):
         vel[2, k] = 0.
     return rad, vel
 
-
+# %% # TODO: Needs Transform to arrays from matrices
 # TODO: add handing for acceleration transforms
 def Perifocal2Keplerian(rad, vel):
     return
 
-
+# %% # TODO: Needs Work
 # TODO: add handing for acceleration transforms
 def Keplerian2Cartesian(kep):
     """
@@ -385,7 +399,7 @@ def Keplerian2Cartesian(kep):
         vel[:, l] = (IJK2PQW * v)
     return rad, vel
 
-
+# %% # TODO: Needs Transform to arrays from matrices
 # TODO: add handing for acceleration transforms
 def Cartesian2Keplerian(rad, vel):
     """
@@ -460,13 +474,13 @@ def Cartesian2Keplerian(rad, vel):
             kep[5, m] = ((360) - kep[5, m])
     return kep
 
-
+# %% # TODO: Needs Transform to arrays from matrices
 # TODO: add handing for acceleration transforms
 # TODO: Make this exist please
 def Cartesian2Perifocal(rad, vel):
     return
 
-
+# %% # TODO: Needs Transform to arrays from matrices
 # TODO: add handing for acceleration transforms
 def Perifocal2Cartesian(rad, vel):
     return
