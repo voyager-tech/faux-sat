@@ -6,3 +6,4 @@ cat .gitignore
 .ipython/
 .matplotlib/
 .spyder-py3/
+sample/EOPCO4.npy
