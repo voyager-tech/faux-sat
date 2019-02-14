@@ -8,6 +8,8 @@ import Requirements as Req
 from orbital_analyses.Transform_State import Gregorian2JD
 from orbital_analyses.Transform_Coordinate import IAU_2000Reduction
 
+# TODO: Remove this section
+
 # Constants
 # TODO: Import the constants file later
 E_Rad = 6378.137            # Earth Radius (km))
@@ -36,10 +38,51 @@ max_iterations = 50
 
 
 def Gauss_Jackson_Prop(r0, v0, Epoch_GD0, step_size, steps, max_iterations=50, accuracy=1e-12):
-    # TODO: Add docstring
+    """
+    Propagate an initial orbit forward in time by a specified timespan.
+
+    Propagator is an 8th order numerical integrator corrector that utilizes a
+    f & g series with Newton-Raphson iteration to calculate the initial
+    positions and velocities to propagate forward from.
+
+    Parameters
+    ----------
+    r0 : numpy array (3,) - [X, Y, Z]
+        - Initial radius vector components defined in km in the J2000eq frame
+    v0 : numpy array (3,) - [VX, VY, VZ]
+        - Initial velocity vector components defined in km in the J2000eq frame
+    Epoch_GD0 : numpy array (6,) - [Yr, Mo, Day, Hr, Min, Sec]
+        - Gregorian Date of the initial state
+    step_size : float
+        - Size of each propagator-calculated step
+        - Multiplied by a time value from the package, Pint, or just in seconds
+        - Note : Best practice for step_size <= 5 min (600 sec) for convergence
+    steps : int
+        - Total number of steps to be evauated in tandem with step_size
+    max_iterations : int, optional
+        - The desired number of iterations to attempt to converge a new step
+    accuracy : float, optional
+        - The desired accuracy for the convergence at each new step
+
+    Returns
+    -------
+    location_c : tuple - (GD, rad, vel, acc, frame)
+        - Returns arrays / lists of information at each step
+        - rad, vel, acc arrays are in the frame specified in the frame list
+
+    References
+    ----------
+    [1] Berry, Matthew M, and Liam M Healy. “Implementation of Gauss-Jackson
+    Integration for Orbit Propagation.” The Journal of the Astronautical
+    Sciences, vol. 52, no. 3, July 2004, pp. 331–357.
+    - https://drum.lib.umd.edu/bitstream/handle/1903/2202/2004-berry-healy-jas.pdf
+
+    [2] D. Vallado, `Fundamentals of Astrodynamics and Applications`. 4th ed.,
+    Microcosm Press, 2013.
+        - Alg. 8, pg. 93
+    """
     # Input: Initial values in inertial frame (J2000eq)
     # Output: Values in inertial frame (J2000eq)
-    # https://drum.lib.umd.edu/bitstream/handle/1903/2202/2004-berry-healy-jas.pdf?sequence=7&isAllowed=y
     # An 8th order numerical integrator corrector for propagation
     # 1. Use f & g series to calculate 8 (-4,4) rad/vel surrounding the epoch_0
     # Initialize arrays to place all calculated state vectors into
@@ -103,8 +146,8 @@ def Gauss_Jackson_Prop(r0, v0, Epoch_GD0, step_size, steps, max_iterations=50, a
         return c2, c3
 
     # Newton-Raphson iteration using Universal Variabes to calculate
-    # the 8 (-4,4) rad/vel surrounding the epoch_0
-    # Vallado - ALg. 8, pg. 93
+    # the 8 (-4, 4) rad/vel surrounding the epoch_0
+    # Vallado - Alg. 8, pg. 93
     # loop to calculate rad/vel vectors of 8 other positions defined by Step
     n_range = np.linspace(-4, 4, 9, dtype=int)
     for n in n_range:
@@ -288,7 +331,7 @@ def Gauss_Jackson_Prop(r0, v0, Epoch_GD0, step_size, steps, max_iterations=50, a
     acc[0, :] = acc_temp[4, :]
     GD[0, :] = Epoch_GD0
     # Function to check what the actual frame is
-    frame.append('ECEF')
+    frame.append('J2000eq')
 
     # Predict
     step_current = 0
@@ -371,7 +414,7 @@ def Gauss_Jackson_Prop(r0, v0, Epoch_GD0, step_size, steps, max_iterations=50, a
         rad[s, :] = rad_temp[4, :]
         vel[s, :] = vel_temp[4, :]
         acc[s, :] = acc_temp[4, :]
-        frame.append('ECEF')
+        frame.append('J2000eq')
         #######################################################################
         # Calculate gregorian date at new step and store in output array
         t_ms = np.zeros(7, dtype=float)
