@@ -4,6 +4,7 @@ from orbital_analyses import u
 from copy import deepcopy as dc
 from datetime import datetime, timedelta
 import Requirements as Req
+import constants as c
 
 from orbital_analyses.Transform_State import Gregorian2JD
 from orbital_analyses.Transform_Coordinate import IAU_2000Reduction
@@ -79,34 +80,9 @@ def Gauss_Jackson_Prop(r0, v0, Epoch_GD0, step_size, steps, max_iterations=50, a
 
     [2] D. Vallado, `Fundamentals of Astrodynamics and Applications`. 4th ed.,
     Microcosm Press, 2013.
-        - Alg. 8, pg. 93
+        - Alg. 8 - pg. 93, Sec. 8.6 - pg. 538
     """
-    # Input: Initial values in inertial frame (J2000eq)
-    # Output: Values in inertial frame (J2000eq)
-    # An 8th order numerical integrator corrector for propagation
-    # 1. Use f & g series to calculate 8 (-4,4) rad/vel surrounding the epoch_0
-    # Initialize arrays to place all calculated state vectors into
-    rad = np.zeros((steps + 1, 3), dtype=float)
-    vel = np.zeros((steps + 1, 3), dtype=float)
-    acc = np.zeros((steps + 1, 3), dtype=float)
-    GD = np.zeros((steps + 1, 6), dtype=float)
-    frame = []
-    # Initialize temp array for calculating convergence at each step
-    rad_temp_inertial = np.zeros((9, 3), dtype=float)
-    vel_temp_inertial = np.zeros((9, 3), dtype=float)
-    rad_temp = np.zeros((9, 3), dtype=float)
-    vel_temp = np.zeros((9, 3), dtype=float)
-    acc_temp = np.zeros((9, 3), dtype=float)
-    GD_temp = dc(Epoch_GD0)
-    # Determine all other variables needed for loop
-    r0_mag = np.linalg.norm(r0)
-    v0_2 = np.inner(v0, v0)  # km^2 / sec^2
-    # Set initial step value
-    # TODO: Add coditional if step has no units
-    h = ((step_size.to(u.sec)).magnitude)
-
-    ###########################################################################
-    # TODO: Move all function definitions to top of main function or section?
+    # Utilized functions for the Newton-Raphson iterator
     def guess1(Tdelt, alpha):
         # Vallado Alg. 8, Pg. 93
         X0 = (np.sqrt(E_Mu) * Tdelt * alpha)
@@ -144,6 +120,29 @@ def Gauss_Jackson_Prop(r0, v0, Epoch_GD0, step_size, steps, max_iterations=50, a
             c2 = (1 / 2)
             c3 = (1 / 6)
         return c2, c3
+
+    # 1. Use f & g series to calculate 8 (-4,4) rad/vel surrounding the epoch_0
+    # Initialize arrays to place all calculated state vectors into
+    rad = np.zeros((steps + 1, 3), dtype=float)
+    vel = np.zeros((steps + 1, 3), dtype=float)
+    acc = np.zeros((steps + 1, 3), dtype=float)
+    GD = np.zeros((steps + 1, 6), dtype=float)
+    frame = []
+    # Initialize temp array for calculating convergence at each step
+    rad_temp_inertial = np.zeros((9, 3), dtype=float)
+    vel_temp_inertial = np.zeros((9, 3), dtype=float)
+    rad_temp = np.zeros((9, 3), dtype=float)
+    vel_temp = np.zeros((9, 3), dtype=float)
+    acc_temp = np.zeros((9, 3), dtype=float)
+    GD_temp = dc(Epoch_GD0)
+    # Determine all other variables needed for loop
+    r0_mag = np.linalg.norm(r0)
+    v0_2 = np.inner(v0, v0)  # km^2 / sec^2
+    # Set initial step value
+    if type(step_size) != int and type(step_size) != float:
+        h = ((step_size.to(u.sec)).magnitude)
+    else:
+        h = dc(step_size)
 
     # Newton-Raphson iteration using Universal Variabes to calculate
     # the 8 (-4, 4) rad/vel surrounding the epoch_0
@@ -195,12 +194,9 @@ def Gauss_Jackson_Prop(r0, v0, Epoch_GD0, step_size, steps, max_iterations=50, a
         #for m in range(9):
         #    rad_temp[m, :], vel_temp[m, :] = IAU_2000Reduction(rad_temp_inert[m, :], vel_temp_inert[m, :], gd_UTC, 1)
 
-###############################################################################
+# %% # TODO: Remove Later######################################################
     # 2. Evaluate 9 acceeration vectors for the 9 states determined above
     # Acceleration w/o any perturbations
-    # 2 body propagation
-    # TODO: With preturbations, just make this evaluation a callable function
-    # Does two_body acceleration exist when others are present? (Yes?)
     def evaluate_accel(rad, vel, bodies, J2=0, drag=0, three_body=0, srp=0):
         # TODO: Docstring here
         # Initialize all acceleration vectors
@@ -213,7 +209,6 @@ def Gauss_Jackson_Prop(r0, v0, Epoch_GD0, step_size, steps, max_iterations=50, a
         for j in range(len(rad)):
             acc_2body[j, :] = -((rad[j, :] * E_Mu) /
                                 (np.linalg.norm(rad[j, :]) ** 3))
-        # TODO: add error for asking for J2 without 2body (any without 2 body?)
         # If selected, evaluate J2 accelerations (Planetary oblateness (grav.))
         if J2 == 1:
             0
@@ -222,24 +217,11 @@ def Gauss_Jackson_Prop(r0, v0, Epoch_GD0, step_size, steps, max_iterations=50, a
             0
         # If selected, evaluate 3-body accelerations (Ex: Luna)
         if three_body == 1:
+            # D. Vallado - pg. 574
             # Collect Mu values of all requested bodies
-            # TODO: Create and import dict of bodies with their grav paramaters
             bodies_Mu = np.zeros(len(bodies), dtype=float)
-            # TODO: Remove dict below once its an import
-            GRAV_PARAMATERS = {
-                    'sun': 1.32712440018e11,
-                    'mercury': 2.2032e4,
-                    'venus': 3.24859e5,
-                    'earth': 3.986004418e5,
-                    'luna': 4.9048695e3,
-                    'mars': 4.282837e4,
-                    'jupiter': 1.26686534e8,
-                    'saturn': 3.7931187e7,
-                    'uranus': 5.793939e6,
-                    'neptune': 6.836529e6,
-                    'pluto': 8.71e2}  # km^3 / sec^2
             for j in range(len(bodies)):
-                bodies_Mu[j] = GRAV_PARAMATERS[bodies[j]]
+                bodies_Mu[j] = c.GRAV_PARAMATER[bodies[j]]
             
                 
         # If selected, evaluate srp accelerations (Solar Radiation Pressure)
@@ -260,7 +242,8 @@ def Gauss_Jackson_Prop(r0, v0, Epoch_GD0, step_size, steps, max_iterations=50, a
     # http://www.hayabusa.isas.jaxa.jp/kawalab/dromobile/Papers/HernandoAyuso%20Dromobile%202016.pdf
     # https://www.sciencedirect.com/science/article/pii/0898122186900258
 
-###############################################################################
+# %% # TODO: Remove Later######################################################
+
     # 3. Converging the accelerations
     # Import all coefficient arrays
     # Eigth order summed adams coefficients in Ordinate Form: a(j,k), b(j,k)
@@ -401,7 +384,6 @@ def Gauss_Jackson_Prop(r0, v0, Epoch_GD0, step_size, steps, max_iterations=50, a
             if iteration < max_iterations:
                 acc_temp[8, :] = -((rad_step * E_Mu) /
                                    (np.linalg.norm(rad_step) ** 3))
-        # TODO: maybe add another point on changing # of iterations
         if iteration > max_iterations:
             raise Exception('The maximum allowable number of iterations has been reached')
         # Increment step in S_n to make room for n + 1 value
