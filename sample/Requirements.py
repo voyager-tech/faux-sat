@@ -2,6 +2,7 @@
 import numpy as np
 from sample.orbital_analyses import u
 # from parts_list import Parts_List
+import sample.decorators
 from sample.orbital_analyses.Transform_State import gregorian2julian_date
 
 # TODO: Add uncertainties in with pint
@@ -59,7 +60,7 @@ GD_UTC = np.asmatrix(GD_UTC)
 #GD_UTC[5, 0] = (0)
 #GD_UTC = np.asmatrix(GD_UTC)
 #
-#JD_UTC = Gregorian2JD(GD_UTC)
+#JD_UTC = gregorian2julian_date(GD_UTC)
 
 # Propagation info
 Ssize = 1.0 * u.min

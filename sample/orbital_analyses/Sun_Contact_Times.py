@@ -1,7 +1,7 @@
 # Utilized Modules
 import numpy as np
 
-from sample.orbital_analyses.Transform_State import TimeAdjust
+from sample.orbital_analyses.Transform_State import convert_time
 from sample.orbital_analyses.Transform_Coordinate import FK5_Precession
 # Sun Position Vector Determination
 
@@ -32,7 +32,7 @@ def sunPosition(GD_UTC):
         - Alg. 29, pg. 279-280
     """
     # Inaccurate to a small degree
-    UTC, JD_UT1, TAI, TT = TimeAdjust(GD_UTC)  # UTC Input
+    UTC, JD_UT1, TAI, TT = convert_time(GD_UTC)  # UTC Input
     UT1 = ((JD_UT1 - 2451545.0) / 36525)
     mlon = (280.460 + (36000.771 * UT1))  # degrees
     # Reduce sp_mlon to within 360 degrees

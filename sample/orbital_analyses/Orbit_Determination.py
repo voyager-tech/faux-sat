@@ -9,7 +9,7 @@ import time
 
 import sample.Requirements as Req
 from sample.parts_list import Parts_List
-from sample.orbital_analyses.Transform_State import TimeAdjust
+from sample.orbital_analyses.Transform_State import convert_time
 from sample.orbital_analyses.Propagation import Prop_Cowell
 from sample.orbital_analyses.Transform_State import Keplerian2Cartesian
 from sample.orbital_analyses.Transform_Coordinate import Geodetic2ECFixed
@@ -213,7 +213,7 @@ for l in range(Iterate):
         Lam_u = np.arccos((np.cos(beta)) /
                           (np.sin(Orbit_val[3, l + 1] * u.deg))).to(u.deg)
         # Determine Greenwich Sidereal Time - ALG 15 - Vallado
-        jd_UTC, jd_UT1, jd_TAI, jd_TT = TimeAdjust(Req.GD_UTC)
+        jd_UTC, jd_UT1, jd_TAI, jd_TT = convert_time(Req.GD_UTC)
         T_UT1 = ((jd_UT1 - 2451545.0) / 36525)
         Theta_s = (67310.54841 +
                    (((876600 * 3600) + 8640184.812866) * T_UT1) +
