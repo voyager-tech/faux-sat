@@ -1,5 +1,5 @@
 # Utilized Modules
-import helpers
+import sample.helpers
 import numba
 from sample.orbital_analyses import u
 
