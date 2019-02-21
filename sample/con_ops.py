@@ -1,12 +1,12 @@
 # Utilized Modules
 import numpy as np
-import Requirements as Req
-from parts_list import Parts_List
+import sample.Requirements as Req
+from sample.parts_list import Parts_List
 
-from Operational_Analyses import State_Determine
-from Operational_Analyses import Power_Consume, Total_Volume, Total_Mass
+from sample.Operational_Analyses import State_Determine
+from sample.Operational_Analyses import Power_Consume, Total_Volume, Total_Mass
 
-from orbital_analyses import u
+from sample.orbital_analyses import u
 
 # Spacecraft State: lists operational conditions of subsystems/components
 

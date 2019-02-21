@@ -1,6 +1,6 @@
 # Modules Utilized
 import numpy as np
-from orbital_analyses import u  # Pint Units
+from sample.orbital_analyses import u  # Pint Units
 
 # Script to be used for setting initial state as well as component data
 # Also needs to handle user analysis/subsystem/component creation

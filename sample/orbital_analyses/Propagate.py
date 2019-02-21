@@ -1,13 +1,13 @@
 # Utilized Modules
 import numpy as np
-from orbital_analyses import u
+from sample.orbital_analyses import u
 from copy import deepcopy as dc
 from datetime import datetime, timedelta
-import Requirements as Req
-import constants as const
+import sample.Requirements as Req
+import sample.constants as const
 
-from orbital_analyses.Transform_State import gregorian2julian_date
-from orbital_analyses.Transform_Coordinate import IAU_2000Reduction
+from sample.orbital_analyses.Transform_State import gregorian2julian_date
+from sample.orbital_analyses.Transform_Coordinate import IAU_2000Reduction
 
 # TODO: Remove this section
 

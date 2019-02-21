@@ -7,9 +7,9 @@ from urllib.request import urlopen
 from bs4 import BeautifulSoup
 import re
 
-from orbital_analyses.Transform_State import TimeAdjust
-from orbital_analyses.Transform_State import JD2Gregorian
-from orbital_analyses.Transform_State import Gregorian2JD
+from sample.orbital_analyses.Transform_State import convert_time
+from sample.orbital_analyses.Transform_State import JD2Gregorian
+from sample.orbital_analyses.Transform_State import gregorian2julian_date
 
 # ********************** Coordinate Reference Sheet **********************
 # *** Earth Based Systems ***
@@ -248,7 +248,7 @@ def IAU_PolarMotion(rad_itrf, vel_itrf, gd_UTC, Transpose):
         raise RuntimeError("Enter an int of 0; or 1 for the reverse transform")
 
     # Time Adjustments
-    jd_UTC, jd_UT1, jd_TAI, jd_TT = TimeAdjust(gd_UTC)
+    jd_UTC, jd_UT1, jd_TAI, jd_TT = convert_time(gd_UTC)
 
     # Get Modified Julian Date from input GD
     MJD_UTC = (jd_UTC - 2400000.5)
@@ -359,7 +359,7 @@ def IAU_ERotationAngle(rad_tirs, vel_tirs, gd_UTC, Transpose):
         raise RuntimeError("Enter an int of 0; or 1 for the reverse transform")
 
     # Time Adjustments
-    jd_UTC, jd_UT1, jd_TAI, jd_TT = TimeAdjust(gd_UTC)
+    jd_UTC, jd_UT1, jd_TAI, jd_TT = convert_time(gd_UTC)
 
     # Get Modified Julian Date from input GD
     MJD_UTC = (jd_UTC - 2400000.5)
@@ -470,7 +470,7 @@ def IAU_PrecessionNutation(rad_cirs, vel_cirs, gd_UTC, Transpose):
         raise RuntimeError("Enter an int of 0; or 1 for the reverse transform")
 
     # Time Adjustments
-    jd_UTC, jd_UT1, jd_TAI, jd_TT = TimeAdjust(gd_UTC)
+    jd_UTC, jd_UT1, jd_TAI, jd_TT = convert_time(gd_UTC)
     T_TT = np.linalg.norm((jd_TT - 2451545.0) / 36525)
     gd_TT = JD2Gregorian(jd_TT)
     # Initial time for TDB determination
@@ -503,7 +503,7 @@ def IAU_PrecessionNutation(rad_cirs, vel_cirs, gd_UTC, Transpose):
     gd_TDB[5, 0] = (TDB_np.astype(object).second +
                     (TDB_np.astype(object).microsecond * 1e-6))
     # Convert to JD
-    jd_TDB = Gregorian2JD(gd_TDB)
+    jd_TDB = gregorian2julian_date(gd_TDB)
     # Determine julian centuries for TDB
     T_TDB = np.linalg.norm((jd_TDB - 2451545.0) / 36525)
     # Additional data from online
@@ -729,7 +729,7 @@ def FK5_PolarMotion(rad, vel, gd_UTC):
     vel_itrf = dc(vel)
 
     # Time Adjustments
-    jd_UTC, jd_UT1, jd_TAI, jd_TT = TimeAdjust(gd_UTC)
+    jd_UTC, jd_UT1, jd_TAI, jd_TT = convert_time(gd_UTC)
 
     # Get Modified Julian Date from input GD
     MJD_UTC = (jd_UTC - 2400000.5)
@@ -784,7 +784,7 @@ def FK5_SiderealTime(rad, vel, gd_UTC):
     vel_pef = dc(vel)
 
     # Time Adjustments
-    jd_UTC, jd_UT1, jd_TAI, jd_TT = TimeAdjust(gd_UTC)
+    jd_UTC, jd_UT1, jd_TAI, jd_TT = convert_time(gd_UTC)
     T_TT = ((jd_TT - 2451545.0) / 36525)
     T_UT1 = ((jd_UT1 - 2451545.0) / 36525)
 
@@ -905,7 +905,7 @@ def FK5_Nutation(rad, vel, gd_UTC):
     vel_tod = dc(vel)
 
     # Time Adjustments
-    jd_UTC, jd_UT1, jd_TAI, jd_TT = TimeAdjust(gd_UTC)
+    jd_UTC, jd_UT1, jd_TAI, jd_TT = convert_time(gd_UTC)
     T_TT = ((jd_TT - 2451545.0) / 36525)
 
     Nutation = np.load('orbital_analyses/Nutation.npy')
@@ -1028,7 +1028,7 @@ def FK5_Precession(rad, vel, gd_UTC):
     vel_mod = dc(vel)
 
     # Time Adjustments
-    jd_UTC, jd_UT1, jd_TAI, jd_TT = TimeAdjust(gd_UTC)
+    jd_UTC, jd_UT1, jd_TAI, jd_TT = convert_time(gd_UTC)
     T_TT = ((jd_TT - 2451545.0) / 36525)
 
     # Determine values for matrix rotations
@@ -1089,7 +1089,7 @@ def FK5_Precession_T(rad, vel, gd_UTC):
     vel_mod = dc(vel)
 
     # Time Adjustments
-    jd_UTC, jd_UT1, jd_TAI, jd_TT = TimeAdjust(gd_UTC)
+    jd_UTC, jd_UT1, jd_TAI, jd_TT = convert_time(gd_UTC)
     T_TT = ((jd_TT - 2451545.0) / 36525)
 
     # Determine values for matrix rotations
@@ -1132,7 +1132,7 @@ def FK5_Nutation_T(rad, vel, gd_UTC):
     vel_tod = dc(vel)
 
     # Time Adjustments
-    jd_UTC, jd_UT1, jd_TAI, jd_TT = TimeAdjust(gd_UTC)
+    jd_UTC, jd_UT1, jd_TAI, jd_TT = convert_time(gd_UTC)
     T_TT = ((jd_TT - 2451545.0) / 36525)
 
     Nutation = np.load('orbital_analyses/Nutation.npy')
@@ -1255,7 +1255,7 @@ def FK5_SiderealTime_T(rad, vel, gd_UTC):
     vel_pef = dc(vel)
 
     # Time Adjustments
-    jd_UTC, jd_UT1, jd_TAI, jd_TT = TimeAdjust(gd_UTC)
+    jd_UTC, jd_UT1, jd_TAI, jd_TT = convert_time(gd_UTC)
     T_TT = ((jd_TT - 2451545.0) / 36525)
     T_UT1 = ((jd_UT1 - 2451545.0) / 36525)
 
@@ -1371,7 +1371,7 @@ def FK5_PolarMotion_T(rad, vel, gd_UTC):
     vel_itrf = dc(vel)
 
     # Time Adjustments
-    jd_UTC, jd_UT1, jd_TAI, jd_TT = TimeAdjust(gd_UTC)
+    jd_UTC, jd_UT1, jd_TAI, jd_TT = convert_time(gd_UTC)
     # Need to use to determine constnts below from site at specific times
     # Call JD2Gregorian one you can read the below site
 

@@ -1,6 +1,6 @@
 # Utilized Modules
 from matplotlib.path import Path
-import Requirements as Req
+import sample.Requirements as Req
 # http://econym.org.uk/gmap/states.xml
 
 

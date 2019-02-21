@@ -3,20 +3,20 @@ import numpy as np
 import time
 import os
 
-from orbital_analyses.Propagation import Prop_Cowell
+from sample.orbital_analyses.Propagation import Prop_Cowell
 
-from orbital_analyses.Transform_Coordinate import Geodetic2ECFixed
-from orbital_analyses.Transform_Coordinate import FK5_J20002ECFixed
-from orbital_analyses.Transform_Coordinate import FK5_ECFixed2J2000
-from orbital_analyses.Transform_Coordinate import ECFixed2Geodetic
+from sample.orbital_analyses.Transform_Coordinate import Geodetic2ECFixed
+from sample.orbital_analyses.Transform_Coordinate import FK5_J20002ECFixed
+from sample.orbital_analyses.Transform_Coordinate import FK5_ECFixed2J2000
+from sample.orbital_analyses.Transform_Coordinate import ECFixed2Geodetic
 
-from orbital_analyses.GS_Contact_Times import satContact
-from orbital_analyses.Sun_Contact_Times import satIlluminated
-from orbital_analyses.Geo_Contact_Times import satOverhead
+from sample.orbital_analyses.GS_Contact_Times import satContact
+from sample.orbital_analyses.Sun_Contact_Times import satIlluminated
+from sample.orbital_analyses.Geo_Contact_Times import satOverhead
 
-from con_ops import component_operations
+from sample.con_ops import component_operations
 
-import Requirements as Req
+import sample.Requirements as Req
 # from orbital_analyses import u
 
 t0 = time.time()

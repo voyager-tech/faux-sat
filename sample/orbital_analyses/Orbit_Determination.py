@@ -2,18 +2,18 @@
 import numpy as np
 import struct
 from copy import deepcopy as dc
-from orbital_analyses import u
+from sample.orbital_analyses import u
 from skopt import dummy_minimize
 from joblib import Parallel
 import time
 
-import Requirements as Req
-from parts_list import Parts_List
-from orbital_analyses.Transform_State import TimeAdjust
-from orbital_analyses.Propagation import Prop_Cowell
-from orbital_analyses.Transform_State import Keplerian2Cartesian
-from orbital_analyses.Transform_Coordinate import Geodetic2ECFixed
-from orbital_analyses.Transform_Coordinate import FK5_ECFixed2J2000
+import sample.Requirements as Req
+from sample.parts_list import Parts_List
+from sample.orbital_analyses.Transform_State import TimeAdjust
+from sample.orbital_analyses.Propagation import Prop_Cowell
+from sample.orbital_analyses.Transform_State import Keplerian2Cartesian
+from sample.orbital_analyses.Transform_Coordinate import Geodetic2ECFixed
+from sample.orbital_analyses.Transform_Coordinate import FK5_ECFixed2J2000
 
 getBin = lambda x: x > 0 and str(bin(x))[2:] or str(bin(x))[3:]
 

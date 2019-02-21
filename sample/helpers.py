@@ -1,6 +1,6 @@
 # Utilized Modules
 import numpy as np
-from orbital_analyses import u
+from sample.orbital_analyses import u
 
 # Helper Functions/Variables
 

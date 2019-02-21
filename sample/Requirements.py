@@ -1,8 +1,8 @@
 # Utilized Modules
 import numpy as np
-from orbital_analyses import u
+from sample.orbital_analyses import u
 # from parts_list import Parts_List
-from orbital_analyses.Transform_State import Gregorian2JD
+from sample.orbital_analyses.Transform_State import gregorian2julian_date
 
 # TODO: Add uncertainties in with pint
 # import uncertainties

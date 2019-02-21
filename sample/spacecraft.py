@@ -1,8 +1,8 @@
 # Utilized Modules
-import helpers
-import propagate
-import constants
-from orbital_analyses import u
+import sample.helpers
+import sample.propagate
+import sample.constants
+from sample.orbital_analyses import u
 import numpy as np
 
 # Functional Definitions/Functions

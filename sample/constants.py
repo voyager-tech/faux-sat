@@ -1,6 +1,6 @@
 # Utilized Modules
 import numpy as np
-from orbital_analyses import u
+from sample.orbital_analyses import u
 
 # Spaceflight Constants - Vallado, Fundamentals of Astrodynamics & Applications
 GRAV_PARAMATER = {

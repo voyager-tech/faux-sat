@@ -1,6 +1,6 @@
 # Modules Used
-from orbital_analyses import Transform_State as TS
-from orbital_analyses import Transform_Coordinate as TC
+from sample.orbital_analyses import Transform_State as TS
+from sample.orbital_analyses import Transform_Coordinate as TC
 
 # Classes for subsystems consisting of methid functions defining different
 # function/analysis modes

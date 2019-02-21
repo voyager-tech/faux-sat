@@ -6,7 +6,7 @@ from bs4 import BeautifulSoup
 from copy import deepcopy as dc
 from urllib.request import urlopen
 from datetime import datetime, timedelta
-from decorators import gregorian_date_validation
+from sample.decorators import gregorian_date_validation
 
 # ALL ASSUMED TO BE IN Stated Coordinate Systems
 # Must convert to appropriate coordinates before using these functions

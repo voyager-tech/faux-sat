@@ -1,8 +1,8 @@
 # Utilized Modules
-from parts_list import Parts_List
+from sample.parts_list import Parts_List
 import numpy as np
-import Requirements as Req
-from orbital_analyses import u
+import sample.Requirements as Req
+from sample.orbital_analyses import u
 
 
 # Spacecraft State per step

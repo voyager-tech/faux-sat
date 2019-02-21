@@ -9,7 +9,7 @@ Created on Thu Jul  5 18:40:09 2018
 # Still has a lot of variables that need to be added!
 
 # Utilized Scripts
-import parts
+import sample.parts
 
 # %% Parts List
 
