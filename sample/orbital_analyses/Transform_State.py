@@ -1,18 +1,19 @@
 # Utilized Modules
-import numpy as np
-from copy import deepcopy as dc
 import os
-from urllib.request import urlopen
-from bs4 import BeautifulSoup
 import re
+import numpy as np
+from bs4 import BeautifulSoup
+from copy import deepcopy as dc
+from urllib.request import urlopen
 from datetime import datetime, timedelta
+from decorators import gregorian_date_validation
 
 # ALL ASSUMED TO BE IN Stated Coordinate Systems
 # Must convert to appropriate coordinates before using these functions
 # Use functions in Transform_Coordinate.py for that
 
 # %% # TODO: Needs Transform to arrays from matrices
-def JD2Gregorian(JD):
+def JD2Gregorian(JD):  # TODO: julian2gregorian_date()
     """
     Converts Julian Date to Gregorian Date Format.
 
@@ -29,7 +30,7 @@ def JD2Gregorian(JD):
 
     See Also
     --------
-    Gregorian2JD : The reverse of this conversion
+    gregorian2julian_date : The reverse of this conversion
 
     References
     ----------
@@ -78,21 +79,25 @@ def JD2Gregorian(JD):
         GD[5, i] = ((tau - GD[3, i] - (GD[4, i] / 60)) * 3600)
     return np.asmatrix(GD)
 
+
 # %% GOOD on arrays
-def Gregorian2JD(GD):
+
+
+@gregorian_date_validation
+def gregorian2julian_date(gregorian_date):
     """
     Converts Julian Date to Gregorian Date Format.
         - Accurate for dates between year 1900 - 2100
 
     Parameters
     ----------
-    GD : array_like [n, 6]
-        - Can handle a numpy matrix of n Gregorian Dates as an input
+    gregorian_date : array_like (n, 6)
+        - Imput an np.ndarray of n Gregorian Dates
 
     Returns
     -------
-    JD : numpy matrix [n]
-        - Returns values as floats due to Sec having decimal values
+    julian_date : numpy matrix (n,)
+        - Returns np.ndarray of n Julian Dates as floats
 
     See Also
     --------
@@ -104,37 +109,41 @@ def Gregorian2JD(GD):
     Microcosm Press, 2013.
         - Alg. 14, pg. 183
     """
-    # Initialize Vectors
-    # Determine how many date entries are imputted
+    # Determine if input is array_like and convert to np.ndarray if so
+    gd = np.array(gregorian_date)
     try:
-        GD.shape[1]
+        gd.shape[1]
     except IndexError:
         entries = 1
     else:
-        entries = GD.shape[0]
+        entries = gd.shape[0]
 
     if entries == 1:
-        gj_1 = (367 * GD[0])
-        gj_2 = np.int((7 * (GD[0] + np.int((GD[1] + 9) / 12))) / 4)
-        gj_3 = np.int((275 * GD[1]) / 9)
-        gj_4 = (GD[2])
-        gj_5 = (((((GD[5] / 60) + GD[4]) / 60) + GD[3]) / 24)
-        JD = np.asscalar(np.float64((gj_1) - (gj_2) + (gj_3) +
-                                    (gj_4) + (1721013.5) + (gj_5)))
+        gj_1 = (367 * gd[0])
+        gj_2 = np.int((7 * (gd[0] + np.int((gd[1] + 9) / 12))) / 4)
+        gj_3 = np.int((275 * gd[1]) / 9)
+        gj_4 = (gd[2])
+        gj_5 = (((((gd[5] / 60) + gd[4]) / 60) + gd[3]) / 24)
+        julian_date = np.asscalar(np.float64((gj_1) - (gj_2) + (gj_3) +
+                                             (gj_4) + (1721013.5) + (gj_5)))
     else:
-        JD = np.zeros(entries, dtype=float)
+        julian_date = np.zeros(entries, dtype=float)
         for j in range(entries):
-            gj_1 = (367 * GD[j, 0])
-            gj_2 = np.int((7 * (GD[j, 0] + np.int((GD[j, 1] + 9) / 12))) / 4)
-            gj_3 = np.int((275 * GD[j, 1]) / 9)
-            gj_4 = (GD[j, 2])
-            gj_5 = (((((GD[j, 5] / 60) + GD[j, 4]) / 60) + GD[j, 3]) / 24)
-            JD[j] = np.asscalar(np.float64((gj_1) - (gj_2) + (gj_3) +
-                                           (gj_4) + (1721013.5) + (gj_5)))
-    return JD
+            gj_1 = (367 * gd[j, 0])
+            gj_2 = np.int((7 * (gd[j, 0] + np.int((gd[j, 1] + 9) / 12))) / 4)
+            gj_3 = np.int((275 * gd[j, 1]) / 9)
+            gj_4 = (gd[j, 2])
+            gj_5 = (((((gd[j, 5] / 60) + gd[j, 4]) / 60) + gd[j, 3]) / 24)
+            julian_date[j] = np.asscalar(np.float64((gj_1) - (gj_2) +
+                                                    (gj_3) + (gj_4) +
+                                                    (1721013.5) + (gj_5)))
+    return julian_date
 
 # %% # TODO: Needs Transform to arrays from matrices
-def TimeAdjust(GD):
+
+
+@gregorian_date_validation
+def convert_time(GD):
     """
     Converts UTC Gregorian Date to UT1, TAI, and TT timeframes.
     Outputs are all Julian Dates
@@ -162,7 +171,7 @@ def TimeAdjust(GD):
     Alg. 16, pg. 195
     """
     # Get Modified Julian Date from input GD
-    JD_UTC = (Gregorian2JD(np.asmatrix(GD)))
+    JD_UTC = (gregorian2julian_date(np.asmatrix(GD)))
     MJD_UTC = (JD_UTC - 2400000.5)
     # Scrape IERS Data to get dUT1
     if os.path.exists(r'orbital_analyses\EOPCO4.npy'):
@@ -231,9 +240,132 @@ def TimeAdjust(GD):
         GD_new[4, 0] = GD_np.astype(object).minute
         GD_new[5, 0] = (GD_np.astype(object).second +
                         (GD_np.astype(object).microsecond * 1e-6))
-        JD_deltas[i] = (Gregorian2JD(GD_new))
+        JD_deltas[i] = (gregorian2julian_date(GD_new))
 
     return JD_UTC, JD_deltas[0], JD_deltas[1], JD_deltas[2]
+
+
+# %%
+
+
+@gregorian_date_validation
+def convert_time(GD):
+    """
+    Converts UTC Gregorian Date to UT1, TAI, and TT timeframes.
+    Outputs are all Julian Dates
+        - Input timeframe must be UTC to maintain accuracy
+
+    Parameters
+    ----------
+    GD : array_like (n, 6)
+        - Gregorian Date input. Timeframe in UTC +0:00
+        - Arranged where each epoch occupies one row
+
+    Returns
+    -------
+    JD_conv : tuple (4)
+        - JD_conv[0] = JD_UTC : numpy ndarray (n,)
+            - Julian Date in Universal Coordinated Time (UTC)
+        - JD_conv[1] = JD_UT1 : numpy ndarray (n,)
+            - Julian Date in Universal Time (UT1)
+        - JD_conv[2] = JD_TAI : numpy ndarray (n,)
+            - Julian Date in International Atomic Time (TAI)
+        - JD_conv[3] = JD_TT : numpy ndarray (n,)
+            - Julian Date in Terrestrial Time (TT)
+
+    References
+    ----------
+    [1] D. Vallado, `Fundamentals of Astrodynamics and Applications`. 4th ed.,
+    Microcosm Press, 2013.
+        - Alg. 16, pg. 195
+    """
+    # Rasie error if user has rows and columns swapped, not (n, 6)
+    if GD[1] > 12 or GD[2] > 31 or GD[3] > 24 or GD[4] > 60 or GD[5] > 60:
+        raise Exception('Input array should be arranged (n, 6)')
+    # Initialize Vectors
+    # Determine how many date entries are imputted
+    try:
+        GD.shape[1]
+    except IndexError:
+        entries = 1
+    else:
+        entries = GD.shape[0]
+    
+    # Get Modified Julian Date from input GD
+    JD_UTC = (gregorian2julian_date(np.asmatrix(GD)))
+    MJD_UTC = (JD_UTC - 2400000.5)
+    # Scrape IERS Data to get dUT1
+    if os.path.exists(r'orbital_analyses\EOPCO4.npy'):
+        EOPCO4 = np.load(r'orbital_analyses\EOPCO4.npy')
+    elif os.path.exists(r'EOPCO4.npy'):
+        EOPCO4 = np.load(r'EOPCO4.npy')
+    else:
+        # EOP 14 C04 (IAU2000A)[May need occasional updating to propper link]
+        EOP_scrape = "https://datacenter.iers.org/data/latestVersion/224_EOP_C04_14.62-NOW.IAU2000A224.txt"  # TODO: Check to see if correct final data table
+        EOP_page = urlopen(EOP_scrape)
+        EOP_soup = BeautifulSoup(EOP_page, "lxml")
+        EOP_string = str(EOP_soup.body.p.string)
+        EOP_list = re.split(r'\n+', EOP_string.rstrip('\n'))
+        del EOP_list[:10]  # Delete initial description lines
+        EOPCO4 = np.matrix(np.zeros((np.size(EOP_list), 16), dtype=float))
+        for n in range(np.size(EOP_list)):  # convert to numpy matrix
+            EOPCO4[n, :] = np.fromstring(EOP_list[n], dtype=float, sep=" ")
+        np.save("EOPCO4.npy", EOPCO4)
+    EOP_index = np.searchsorted(np.ravel(EOPCO4[:, 3]), MJD_UTC)
+
+    # Scrape IERS Data to get dAT
+    if os.path.exists(r'orbital_analyses\deltaTA.npy'):
+        deltaTA = np.load(r'orbital_analyses\deltaTA.npy')
+    elif os.path.exists(r'deltaTA.npy'):
+        deltaTA = np.load(r'deltaTA.npy')
+    dTA_index = np.searchsorted(np.ravel(deltaTA[:, 3]), JD_UTC)
+
+    # Check if date is exactly or greater than index value and edit if needed
+    if EOP_index == np.size(EOPCO4[:, 3]):
+        EOP_index = (EOP_index - 1)
+    elif MJD_UTC != EOPCO4[EOP_index, 3]:
+        EOP_index = (EOP_index - 1)
+
+    if dTA_index == np.size(deltaTA[:, 3]):
+        dTA_index = (dTA_index - 1)
+    elif JD_UTC != deltaTA[dTA_index, 3]:
+        dTA_index = (dTA_index - 1)
+
+    # TODO: Currently date outside data range takes last value in data, change?
+    dUT1 = np.asscalar(EOPCO4[EOP_index, 6])  # Seconds
+    dAT = np.asscalar(deltaTA[dTA_index, 4])  # Seconds
+    dTT = (32.184)  # Seconds  # TODO: Does this change?
+    deltas = np.array([dUT1, dAT, (dAT + dTT)])
+
+    # Add time to GD_UTC
+    t_ms = np.asmatrix(np.zeros((7, 1), dtype=np.float64))
+    t_ms[0:5, 0] = GD[0:5, 0]
+    t_ms[5, 0] = np.floor(GD[5, 0])  # Seconds
+    t_ms[6, 0] = (np.mod(GD[5, 0], 1) * 1e6)  # Milliseconds
+    t_ms = t_ms.astype(int)
+    GD_utc = datetime(t_ms[0, 0], t_ms[1, 0], t_ms[2, 0], t_ms[3, 0],
+                      t_ms[4, 0], t_ms[5, 0], t_ms[6, 0])  # To datetime
+    # Calculate time delta to adjust time from TT to TDB
+    JD_deltas = np.zeros((3), dtype=float)
+    for i in range(np.size(deltas)):
+        add_sec = deltas[i]
+        GD_add = timedelta(seconds=add_sec)
+        GD_f = GD_utc + GD_add
+        # Convert back to numpy array
+        GD_np = np.datetime64(GD_f)
+        GD_new = np.asmatrix(np.zeros((6, 1), dtype=np.float64))
+        GD_new[0, 0] = GD_np.astype(object).year
+        GD_new[1, 0] = GD_np.astype(object).month
+        GD_new[2, 0] = GD_np.astype(object).day
+        GD_new[3, 0] = GD_np.astype(object).hour
+        GD_new[4, 0] = GD_np.astype(object).minute
+        GD_new[5, 0] = (GD_np.astype(object).second +
+                        (GD_np.astype(object).microsecond * 1e-6))
+        JD_deltas[i] = (gregorian2julian_date(GD_new))
+
+    return JD_UTC, JD_deltas[0], JD_deltas[1], JD_deltas[2]
+
+
 
 # %% # TODO: Needs Transform to arrays from matrices
 # TODO: add handing for acceleration transforms
