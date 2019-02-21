@@ -4,17 +4,12 @@ from orbital_analyses import u
 from copy import deepcopy as dc
 from datetime import datetime, timedelta
 import Requirements as Req
-import constants as c
+import constants as const
 
-from orbital_analyses.Transform_State import Gregorian2JD
+from orbital_analyses.Transform_State import gregorian2julian_date
 from orbital_analyses.Transform_Coordinate import IAU_2000Reduction
 
 # TODO: Remove this section
-
-# Constants
-# TODO: Import the constants file later
-E_Rad = 6378.137            # Earth Radius (km))
-E_Mu = 398600.4418          # Earth Mu (km^3 / sec^2)
 
 # Determine Inital State
 # Initial Rad / Vel - R0, V0 and epoch
@@ -25,20 +20,20 @@ r0 = np.array([1949.7385039, -5139.97811485, -4852.9027131])  # km
 v0 = np.array([-6.57485096794, 0.215327040815, -3.14995010529])  # km / sec
 # EpochGD_0 = Req.GD_UTC  # Gregorian Date
 Epoch_GD0 = np.array([2004, 4, 6, 0, 0, 0])  # Gregorian Date
-Epoch_JD0 = Gregorian2JD(Epoch_GD0)  # Julian Date # TODO: Remove?
+Epoch_JD0 = gregorian2julian_date(Epoch_GD0)  # Julian Date # TODO: Remove?
 # Step = Req.Ssize
 step_size = 1 * u.min
-steps = 1440
+steps = 100
 accuracy = 1e-012
 max_iterations = 50
 
 # TODO: Include time at each state into iterations and output file
-# Use TimeAdjust type code (or old propagator) and make into a function
+# Use convert_time type code (or old propagator) and make into a function
 ############################################################################
 # %%
 
 
-def Gauss_Jackson_Prop(r0, v0, Epoch_GD0, step_size, steps, max_iterations=50, accuracy=1e-12):
+def gauss_jackson_prop(r0, v0, Epoch_GD0, step_size, steps, max_iterations=50, accuracy=1e-12):
     """
     Propagate an initial orbit forward in time by a specified timespan.
 
@@ -85,15 +80,16 @@ def Gauss_Jackson_Prop(r0, v0, Epoch_GD0, step_size, steps, max_iterations=50, a
     # Utilized functions for the Newton-Raphson iterator
     def guess1(Tdelt, alpha):
         # Vallado Alg. 8, Pg. 93
-        X0 = (np.sqrt(E_Mu) * Tdelt * alpha)
+        X0 = (np.sqrt(const.GRAV_PARAMATER['EARTH']) * Tdelt * alpha)
         return X0
 
     def guess2(r0, v0, Tdelt):
         # Vallado Alg. 8, Pg. 93
         h0 = np.cross(r0, v0)
         h0_2 = np.linalg.norm(np.inner(h0, h0))
-        p = (h0_2 / E_Mu)
-        s = ((np.arccos(3 * np.sqrt(E_Mu / (p ** 3)) * Tdelt)) / 2)
+        p = (h0_2 / const.GRAV_PARAMATER['EARTH'])
+        s = ((np.arccos(3 * np.sqrt(const.GRAV_PARAMATER['EARTH'] /
+                                    (p ** 3)) * Tdelt)) / 2)
         w = np.arctan(np.cbrt(np.tan(s)))
         X0 = (np.sqrt(p) * 2 * np.cot(2 * w))
         return X0
@@ -102,9 +98,10 @@ def Gauss_Jackson_Prop(r0, v0, Epoch_GD0, step_size, steps, max_iterations=50, a
         # Vallado Alg. 8, Pg. 93
         a = (1 / alpha)
         X0 = (np.sign(Tdelt) * np.sqrt(-a) *
-              np.log((-2 * E_Mu * alpha * Tdelt) /
+              np.log((-2 * const.GRAV_PARAMATER['EARTH'] * alpha * Tdelt) /
                      ((np.linalg.norm(np.inner(r0, v0))) + np.sign(Tdelt) *
-                      np.sqrt(-E_Mu * a) * (1 - r0_mag * alpha))))
+                      np.sqrt(-const.GRAV_PARAMATER['EARTH'] * a) *
+                      (1 - r0_mag * alpha))))
         return X0
 
     def c2c3(psi):
@@ -152,7 +149,7 @@ def Gauss_Jackson_Prop(r0, v0, Epoch_GD0, step_size, steps, max_iterations=50, a
     for n in n_range:
         # Compute the Rad and Vel vectors at each step around the origin
         Tdelt = n * h
-        alpha0 = ((-v0_2 / E_Mu) + (2 / r0_mag))
+        alpha0 = ((-v0_2 / const.GRAV_PARAMATER['EARTH']) + (2 / r0_mag))
         if alpha0 > 0.000001:                   # Circle or Ellipse
             Xn = guess1(Tdelt, alpha0)  # Xn = [sqrt(km)]
         elif np.absolute(alpha0) < 0.000001:    # Parabola
@@ -164,19 +161,22 @@ def Gauss_Jackson_Prop(r0, v0, Epoch_GD0, step_size, steps, max_iterations=50, a
             Psi = ((Xn ** 2) * alpha0)
             c2, c3 = c2c3(Psi)
             r = (((Xn ** 2) * c2) + ((np.linalg.norm(np.inner(r0, v0)) /
-                                     np.sqrt(E_Mu)) * Xn * (1 - (Psi * c3))) +
+                                     np.sqrt(const.GRAV_PARAMATER['EARTH'])) *
+                                     Xn * (1 - (Psi * c3))) +
                  (r0_mag * (1 - (Psi * c2))))
-            Xn1 = (Xn + ((((np.sqrt(E_Mu) * Tdelt) -
+            Xn1 = (Xn + ((((np.sqrt(const.GRAV_PARAMATER['EARTH']) * Tdelt) -
                            ((Xn ** 3) * c3) -
                            ((np.linalg.norm(np.inner(r0, v0)) /
-                             np.sqrt(E_Mu)) * ((Xn ** 2) * c2)) -
+                             np.sqrt(const.GRAV_PARAMATER['EARTH'])) *
+                           ((Xn ** 2) * c2)) -
                            (r0_mag * Xn * (1 - (Psi * c3))))) / r))
             Xn = dc(Xn1)
             err = np.absolute(Xn - Xn1)
         # With iterated values, calculate relevant f and g functions
         f = (1 - ((Xn ** 2) / (r0_mag)) * c2)
-        g = (Tdelt - ((Xn ** 3) / np.sqrt(E_Mu)) * c3)
-        f_dot = ((np.sqrt(E_Mu) / (r * r0_mag)) * Xn * ((Psi * c3) - 1))
+        g = (Tdelt - ((Xn ** 3) / np.sqrt(const.GRAV_PARAMATER['EARTH'])) * c3)
+        f_dot = ((np.sqrt(const.GRAV_PARAMATER['EARTH']) / (r * r0_mag)) *
+                 Xn * ((Psi * c3) - 1))
         g_dot = (1 - ((Xn ** 2) / (r)) * c2)
         # Check for correctness
         # print((f * g_dot) - (f_dot * g))  # TODO: Create check here (Should = 1)
@@ -199,31 +199,36 @@ def Gauss_Jackson_Prop(r0, v0, Epoch_GD0, step_size, steps, max_iterations=50, a
     # Acceleration w/o any perturbations
     def evaluate_accel(rad, vel, bodies, J2=0, drag=0, three_body=0, srp=0):
         # TODO: Docstring here
+        # TODO: make sure user has entered 1s or 0s for each option
         # Initialize all acceleration vectors
         acc_2body = np.zeros((len(rad), 3), dtype=float)
         acc_J2 = np.zeros(3, dtype=float)
         acc_drag = np.zeros(3, dtype=float)
         acc_3body = np.zeros(3, dtype=float)
         acc_srp = np.zeros(3, dtype=float)
-        # Evaluate 2-body accelerations
-        for j in range(len(rad)):
-            acc_2body[j, :] = -((rad[j, :] * E_Mu) /
-                                (np.linalg.norm(rad[j, :]) ** 3))
+        # Evaluate 2-body accelerations (Only if not evaluating 3-Body)
+        if three_body == 0:
+            for j in range(len(rad)):
+                acc_2body[j, :] = -((rad[j, :] *
+                                     const.GRAV_PARAMATER['EARTH']) /
+                                    (np.linalg.norm(rad[j, :]) ** 3))
         # If selected, evaluate J2 accelerations (Planetary oblateness (grav.))
         if J2 == 1:
             0
         # If selected, evaluate drag accelerations (Atmosphereic)
         if drag == 1:
             0
-        # If selected, evaluate 3-body accelerations (Ex: Luna)
+        # If selected, evaluate 3-body accelerations (Includes 2-body)
         if three_body == 1:
             # D. Vallado - pg. 574
             # Collect Mu values of all requested bodies
             bodies_Mu = np.zeros(len(bodies), dtype=float)
             for j in range(len(bodies)):
-                bodies_Mu[j] = c.GRAV_PARAMATER[bodies[j]]
+                bodies_Mu[j] = const.GRAV_PARAMATER[bodies[j]]
+            # D. Vallado - pg. 295-298
+            # Calculate distance vectors from the satellite to the 3rd bodies
             
-                
+
         # If selected, evaluate srp accelerations (Solar Radiation Pressure)
         if srp == 1:
             0
@@ -232,7 +237,7 @@ def Gauss_Jackson_Prop(r0, v0, Epoch_GD0, step_size, steps, max_iterations=50, a
         return
 
     for j in range(9):
-        acc_temp[j, :] = -((rad_temp[j, :] * E_Mu) /
+        acc_temp[j, :] = -((rad_temp[j, :] * const.GRAV_PARAMATER['EARTH']) /
                            (np.linalg.norm(rad_temp[j, :]) ** 3))
     # Incorporate Special Perturbations into acceleration model
     # Vallado Alg. 64, Pg. 591
@@ -303,7 +308,8 @@ def Gauss_Jackson_Prop(r0, v0, Epoch_GD0, step_size, steps, max_iterations=50, a
             rad_temp[n, :] = ((h ** 2) * (S_n[n, :] + a_sum[n, :]))
         # 3b.v. Evaluate acceleration using new radius and velocity values
         for j in range(9):
-            acc_temp1[j, :] = -((rad_temp[j, :] * E_Mu) /
+            acc_temp1[j, :] = -((rad_temp[j, :] *
+                                 const.GRAV_PARAMATER['EARTH']) /
                                 (np.linalg.norm(rad_temp[j, :]) ** 3))
         # 3c. Test convergence of accelerations in acc_int
         diff_acc = np.linalg.norm(acc_temp1 - acc_temp)
@@ -344,7 +350,8 @@ def Gauss_Jackson_Prop(r0, v0, Epoch_GD0, step_size, steps, max_iterations=50, a
         # Increment current step in acc_temp to make room for n + 1 value
         acc_temp = np.roll(acc_temp, -1, axis=0)
         # Calculate new acceleration for n + 1 and replace rolled vector
-        acc_temp[8, :] = -(rad_np1 * (E_Mu / (np.linalg.norm(rad_np1) ** 3)))
+        acc_temp[8, :] = -(rad_np1 * (const.GRAV_PARAMATER['EARTH'] /
+                                      (np.linalg.norm(rad_np1) ** 3)))
         # 9. Increment n (Incremented by rolling the arrays above)
         # 10. Converge radius and velocity vectors
         diff_rad = 1
@@ -382,7 +389,7 @@ def Gauss_Jackson_Prop(r0, v0, Epoch_GD0, step_size, steps, max_iterations=50, a
             rad_step = dc(rad_step1)
             # Re-evaluate acc_temp before next loop
             if iteration < max_iterations:
-                acc_temp[8, :] = -((rad_step * E_Mu) /
+                acc_temp[8, :] = -((rad_step * const.GRAV_PARAMATER['EARTH']) /
                                    (np.linalg.norm(rad_step) ** 3))
         if iteration > max_iterations:
             raise Exception('The maximum allowable number of iterations has been reached')
