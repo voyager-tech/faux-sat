@@ -5,14 +5,20 @@ import numpy as np
 # Decorators to do with input validation
 def gregorian_date_validation(func):
     def wrapper(*args, **kwargs):
-        # If input is array_like then convert to np.ndarray 
+        # If input is array_like then convert to np.ndarray
         gd = np.asarray(args[0])
-        # Raise exceptions for incorrect array inputs
+        # Check to see if all input values are numbers
+        try:
+            np.all(np.isnan(gd))
+        except TypeError:
+            raise TypeError('Input array should be composed of only numbers')
+        # Raise exceptions for incorrectly arranged array inputs
         # Handling for 1-D arrays
         try:
             gd.shape[1]
         except IndexError:
-            pass
+            if gd.shape[0] != 6:
+                raise IndexError('Input array should be 6 entries long')
         else:
             # Handling for array that needs to be transposed to (n, 6)
             if gd.shape[1] != 6:
