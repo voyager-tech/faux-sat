@@ -13,9 +13,88 @@ from sample.decorators import gregorian_date_validation
 # Use functions in Transform_Coordinate.py for that
 
 
-# %% # TODO: Literally needs to be written
+# %% GOOD on arrays
+@gregorian_date_validation
 def increment_gregorian_date(gregorian_date, delta):
-    return incremented_gregorian_date
+    """
+    Increments an array of gregorian date(s) by the delta(s) provided
+        - Multiple deltas can be inputted
+
+    Parameters
+    ----------
+    gregorian_date : array_like (n, 6)
+        - Imput an numpy ndarray of n Gregorian Dates
+        - Arranged in the format np.array([year, month, day, hour, min, sec])
+    delta : array_like (n,)
+        - Input an numpy ndarray of n time deltas
+        - Time deltas must be given in seconds, either positive or negative
+
+    Returns
+    -------
+    incremented_gregorian_date : tuple (n)
+        - Returns a tuple of size n, n defined by number of gregorian dates
+        - For each entry, an (m, 6) array, where m is defined by deltas given
+    """
+    # Determine number of date entries in gregorian_date
+    gd = np.array(gregorian_date)
+    try:
+        gd.shape[1]
+    except IndexError:
+        entries = 1
+    else:
+        entries = gd.shape[0]
+    # Determine number of delta values to evaluate for each gregorian date
+    # TODO: add size validation here?
+    deltas = np.array(delta).shape[0]
+
+    # Initialize output tuple
+    incremented_gregorian_date = []
+    # Loop to iterate through gregorian dates
+    for i in range(entries):
+        # Handling if only one gregorian date supplied
+        if entries == 1:
+            # Add time to GD_UTC
+            time_ms = np.zeros((7, 1), dtype=float)
+            time_ms[0:5, 0] = gd[0:5]
+            time_ms[5, 0] = np.floor(gd[5])  # Seconds
+            time_ms[6, 0] = (np.mod(gd[5], 1) * 1e6)  # Milliseconds
+            time_ms = time_ms.astype(int)
+            gd_UTC = datetime(time_ms[0, 0], time_ms[1, 0], time_ms[2, 0],
+                              time_ms[3, 0], time_ms[4, 0], time_ms[5, 0],
+                              time_ms[6, 0])  # Convert to datetime
+            # Using time delta, initilize array to put final gd values into
+            gd_deltas = np.zeros((deltas, 6), dtype=float)
+            # Loop to iterate through deltas
+        else:
+            # Add time to GD_UTC
+            time_ms = np.zeros((7, 1), dtype=float)
+            time_ms[0:5, 0] = gd[i, 0:5]
+            time_ms[5, 0] = np.floor(gd[i, 5])  # Seconds
+            time_ms[6, 0] = (np.mod(gd[i, 5], 1) * 1e6)  # Milliseconds
+            time_ms = time_ms.astype(int)
+            gd_UTC = datetime(time_ms[0, 0], time_ms[1, 0], time_ms[2, 0],
+                              time_ms[3, 0], time_ms[4, 0], time_ms[5, 0],
+                              time_ms[6, 0])  # Convert to datetime
+            # Using time delta, initilize array to put final gd values into
+            gd_deltas = np.zeros((deltas, 6), dtype=float)
+            # Loop to iterate through deltas
+        for j in range(deltas):
+            # Add seconds from each user defined delta and increment the date
+            add_sec = delta[j]
+            gd_add = timedelta(seconds=int(add_sec))
+            gd_final = gd_UTC + gd_add
+            # Convert back to numpy array
+            gd_np = np.datetime64(gd_final)
+            gd_deltas[j, 0] = gd_np.astype(object).year
+            gd_deltas[j, 1] = gd_np.astype(object).month
+            gd_deltas[j, 2] = gd_np.astype(object).day
+            gd_deltas[j, 3] = gd_np.astype(object).hour
+            gd_deltas[j, 4] = gd_np.astype(object).minute
+            gd_deltas[j, 5] = (gd_np.astype(object).second +
+                               (gd_np.astype(object).microsecond * 1e-6))
+        incremented_gregorian_date.append(gd_deltas)
+
+    return tuple(incremented_gregorian_date)
 
 
 # %% # TODO: Needs Transform to arrays from matrices
@@ -87,8 +166,6 @@ def JD2Gregorian(JD):  # TODO: julian2gregorian_date()
 
 
 # %% GOOD on arrays
-
-
 @gregorian_date_validation
 def gregorian2julian_date(gregorian_date):
     """
@@ -98,13 +175,13 @@ def gregorian2julian_date(gregorian_date):
     Parameters
     ----------
     gregorian_date : array_like (n, 6)
-        - Imput an np.ndarray of n Gregorian Dates
+        - Imput an numpy ndarray of n Gregorian Dates
         - Arranged in the format np.array([year, month, day, hour, min, sec])
 
     Returns
     -------
     julian_date : numpy matrix (n,)
-        - Returns np.ndarray of n Julian Dates as floats
+        - Returns numpy ndarray of n Julian Dates as floats
 
     See Also
     --------
@@ -116,7 +193,7 @@ def gregorian2julian_date(gregorian_date):
     Microcosm Press, 2013.
         - Alg. 14, pg. 183
     """
-    # Determine if input is array_like and convert to np.ndarray if so
+    # Determine number of date entries in gregorian_date
     gd = np.array(gregorian_date)
     try:
         gd.shape[1]
@@ -124,7 +201,7 @@ def gregorian2julian_date(gregorian_date):
         entries = 1
     else:
         entries = gd.shape[0]
-
+    # Convert single date or array of dates to julian dates
     if entries == 1:
         gj_1 = (367 * gd[0])
         gj_2 = np.int((7 * (gd[0] + np.int((gd[1] + 9) / 12))) / 4)
@@ -158,7 +235,7 @@ def convert_time(gregorian_date):
     Parameters
     ----------
     gregorian_date : array_like (n, 6)
-        - Imput an np.ndarray of n Gregorian Dates
+        - Imput an numpy ndarray of n Gregorian Dates
         - Arranged in the format np.array([year, month, day, hour, min, sec])
 
     Returns
