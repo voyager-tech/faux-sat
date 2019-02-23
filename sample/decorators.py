@@ -6,7 +6,7 @@ import numpy as np
 # Decorators to do with input validation
 def gregorian_date_validation(func):
     """
-    Decorator function. function(gregorian_date, ..., ...)
+    Decorator function
     Validate that a gregorian date that is inputted into a function is of the
     form (n, 6) where n is total number of gregorian date entries and the input
     can be converted into a numpy ndarray format
