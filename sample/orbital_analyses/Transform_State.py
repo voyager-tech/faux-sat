@@ -4,7 +4,7 @@ import re
 import numpy as np
 from bs4 import BeautifulSoup
 from copy import deepcopy as dc
-from urllib.request import urlopen
+from urllib.request import urlopen, Request
 from datetime import datetime, timedelta
 from sample.decorators import gregorian_date_validation
 
@@ -81,7 +81,7 @@ def increment_gregorian_date(gregorian_date, delta):
         for j in range(deltas):
             # Add seconds from each user defined delta and increment the date
             add_sec = delta[j]
-            gd_add = timedelta(seconds=int(add_sec))
+            gd_add = timedelta(seconds=add_sec)
             gd_final = gd_UTC + gd_add
             # Convert back to numpy array
             gd_np = np.datetime64(gd_final)
@@ -160,6 +160,7 @@ def JD2Gregorian(JD):  # TODO: julian2gregorian_date()
         GD[3, i] = np.trunc(tau)
         # Determine Minute
         GD[4, i] = np.trunc((tau - GD[3, i]) * 60)
+        # TODO: Check JD = 2453140.1965277777053 does not get 60 sec
         # Determine Second
         GD[5, i] = ((tau - GD[3, i] - (GD[4, i] / 60)) * 3600)
     return np.asmatrix(GD)
@@ -224,7 +225,7 @@ def gregorian2julian_date(gregorian_date):
     return julian_date
 
 
-# %% # TODO: Still needs to be finished
+# %% GOOD on arrays
 @gregorian_date_validation
 def convert_time(gregorian_date):
     """
@@ -240,14 +241,14 @@ def convert_time(gregorian_date):
 
     Returns
     -------
-    JD_conv : tuple (4)
-        - JD_conv[0] = julian_date_UTC : numpy ndarray (n,)
+    julian_date_conv : tuple (n)(4,) each entry is an ndarray of 4 julian dates
+        - julian_date_conv[n][0] = julian_date_UTC
             - Julian Date in Universal Coordinated Time (UTC)
-        - JD_conv[1] = julian_date_UT1 : numpy ndarray (n,)
+        - julian_date_conv[n][1] = julian_date_UT1
             - Julian Date in Universal Time (UT1)
-        - JD_conv[2] = julian_date_TAI : numpy ndarray (n,)
+        - julian_date_conv[n][2] = julian_date_TAI
             - Julian Date in International Atomic Time (TAI)
-        - JD_conv[3] = julian_date_TT : numpy ndarray (n,)
+        - julian_date_conv[n][3] = julian_date_TT
             - Julian Date in Terrestrial Time (TT)
 
     References
@@ -269,12 +270,14 @@ def convert_time(gregorian_date):
     # Get IERS data from online if local file doesn't exist
     if os.path.exists(r'sample\orbital_analyses\EOPCO4.npy'):
         EOPCO4 = np.load(r'sample\orbital_analyses\EOPCO4.npy')
-    elif os.path.exists(r'EOPCO4.npy'):
-        EOPCO4 = np.load(r'EOPCO4.npy')
+    elif os.path.exists(r'sample\EOPCO4.npy'):
+        EOPCO4 = np.load(r'sample\EOPCO4.npy')
     else:
         # EOP 14 C04 (IAU2000A) [May need occasional updating to propper link]
-        EOP_scrape = "https://datacenter.iers.org/data/latestVersion/224_EOP_C04_14.62-NOW.IAU2000A224.txt"  # TODO: Check to see if correct final data table
-        EOP_page = urlopen(EOP_scrape)
+        EOP_scrape = "https://datacenter.iers.org/data/latestVersion/224_EOP_C04_14.62-NOW.IAU2000A224.txt"  # TODO: Check if correct data table
+        hdr = {'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'}
+        EOP_request = Request(url=EOP_scrape, headers=hdr)
+        EOP_page = urlopen(EOP_request)
         EOP_soup = BeautifulSoup(EOP_page, "lxml")
         EOP_string = str(EOP_soup.body.p.string)
         EOP_list = re.split(r'\n+', EOP_string.rstrip('\n'))
@@ -289,122 +292,48 @@ def convert_time(gregorian_date):
     elif os.path.exists(r'deltaTA.npy'):
         deltaTA = np.load(r'deltaTA.npy')
 
-    # TODO: If handling is added for 1d vs 2d arrays with function in issue #26, should be able to remove this if statement and just make 1 loop
-    # Might also not be able to add function here
-    if entries == 1:
-        # Get Modified Julian Date from input GD
-        julian_date_UTC = (gregorian2julian_date(gregorian_date))
-        modjulian_date_UTC = (julian_date_UTC - 2400000.5)
-
+    # Initalize array for all ndarrays to be placed into for output
+    julian_date_conv = []
+    for i in range(entries):
+        # Handling if only one gregorian date is supplied
+        if entries == 1:
+            julian_date_UTC = (gregorian2julian_date(gregorian_date))
+            modjulian_date_UTC = (julian_date_UTC - 2400000.5)
+        else:
+            julian_date_UTC = (gregorian2julian_date(gregorian_date[i, :]))
+            modjulian_date_UTC = (julian_date_UTC - 2400000.5)
         # Scrape IERS Data files to get dUT1 & dAT
         EOP_index = np.searchsorted(np.ravel(EOPCO4[:, 3]), modjulian_date_UTC)
         dTA_index = np.searchsorted(np.ravel(deltaTA[:, 3]), julian_date_UTC)
-
         # Check if date is >= the index value and edit if needed
         if EOP_index == np.size(EOPCO4[:, 3]):
             EOP_index = (EOP_index - 1)
         elif modjulian_date_UTC != EOPCO4[EOP_index, 3]:
             EOP_index = (EOP_index - 1)
-
         if dTA_index == np.size(deltaTA[:, 3]):
             dTA_index = (dTA_index - 1)
         elif julian_date_UTC != deltaTA[dTA_index, 3]:
             dTA_index = (dTA_index - 1)
-
-        # TODO: Currently date outside data range takes last value in data, change?
+        # TODO: Date outside data range takes last value in data, change?
         dUT1 = np.asscalar(EOPCO4[EOP_index, 6])  # Seconds
         dAT = np.asscalar(deltaTA[dTA_index, 4])  # Seconds
-        dTT = (32.184)  # Seconds  # TODO: Does this change?
+        dTT = (32.184)  # Seconds
         deltas = np.array([dUT1, dAT, (dAT + dTT)])
+        print(deltas)
 
-        # Add time to GD_UTC
-        t_ms = np.asmatrix(np.zeros((7, 1), dtype=np.float64))
-        t_ms[0:5, 0] = gregorian_date[0:5]
-        t_ms[5, 0] = np.floor(gregorian_date[5])  # Seconds
-        t_ms[6, 0] = (np.mod(gregorian_date[5], 1) * 1e6)  # Milliseconds
-        t_ms = t_ms.astype(int)
-        gd_UTC = datetime(t_ms[0, 0], t_ms[1, 0], t_ms[2, 0], t_ms[3, 0],
-                          t_ms[4, 0], t_ms[5, 0], t_ms[6, 0])  # To datetime
-        # Calculate time delta to adjust time from TT to TDB
-        julian_date_deltas = np.zeros((3), dtype=float)
-        for i in range(deltas.size):
-            add_sec = deltas[i]
-            gd_add = timedelta(seconds=add_sec)
-            gd_f = gd_UTC + gd_add
-            # Convert back to numpy array
-            gd_np = np.datetime64(gd_f)
-            gd_new = np.asmatrix(np.zeros((6, 1), dtype=np.float64))
-            gd_new[0, 0] = gd_np.astype(object).year
-            gd_new[1, 0] = gd_np.astype(object).month
-            gd_new[2, 0] = gd_np.astype(object).day
-            gd_new[3, 0] = gd_np.astype(object).hour
-            gd_new[4, 0] = gd_np.astype(object).minute
-            gd_new[5, 0] = (gd_np.astype(object).second +
-                            (gd_np.astype(object).microsecond * 1e-6))
-            julian_date_deltas[i] = (gregorian2julian_date(gd_new))
-        converted_julian_date = (julian_date_UTC, julian_date_deltas[0],
-                                 julian_date_deltas[1], julian_date_deltas[2])
-    else:
-        pass
-
-
-
-
-
-
-
-
-
-
-
-
-
-    # Check if date is exactly or greater than index value and edit if needed
-    if EOP_index == np.size(EOPCO4[:, 3]):
-        EOP_index = (EOP_index - 1)
-    elif modjulian_date_UTC != EOPCO4[EOP_index, 3]:
-        EOP_index = (EOP_index - 1)
-
-    if dTA_index == np.size(deltaTA[:, 3]):
-        dTA_index = (dTA_index - 1)
-    elif JD_UTC != deltaTA[dTA_index, 3]:
-        dTA_index = (dTA_index - 1)
-
-    # TODO: Currently date outside data range takes last value in data, change?
-    dUT1 = np.asscalar(EOPCO4[EOP_index, 6])  # Seconds
-    dAT = np.asscalar(deltaTA[dTA_index, 4])  # Seconds
-    dTT = (32.184)  # Seconds  # TODO: Does this change?
-    deltas = np.array([dUT1, dAT, (dAT + dTT)])
-
-    # Add time to GD_UTC
-    t_ms = np.asmatrix(np.zeros((7, 1), dtype=np.float64))
-    t_ms[0:5, 0] = GD[0:5, 0]
-    t_ms[5, 0] = np.floor(GD[5, 0])  # Seconds
-    t_ms[6, 0] = (np.mod(GD[5, 0], 1) * 1e6)  # Milliseconds
-    t_ms = t_ms.astype(int)
-    GD_utc = datetime(t_ms[0, 0], t_ms[1, 0], t_ms[2, 0], t_ms[3, 0],
-                      t_ms[4, 0], t_ms[5, 0], t_ms[6, 0])  # To datetime
-    # Calculate time delta to adjust time from TT to TDB
-    JD_deltas = np.zeros((3), dtype=float)
-    for i in range(np.size(deltas)):
-        add_sec = deltas[i]
-        GD_add = timedelta(seconds=add_sec)
-        GD_f = GD_utc + GD_add
-        # Convert back to numpy array
-        GD_np = np.datetime64(GD_f)
-        GD_new = np.asmatrix(np.zeros((6, 1), dtype=np.float64))
-        GD_new[0, 0] = GD_np.astype(object).year
-        GD_new[1, 0] = GD_np.astype(object).month
-        GD_new[2, 0] = GD_np.astype(object).day
-        GD_new[3, 0] = GD_np.astype(object).hour
-        GD_new[4, 0] = GD_np.astype(object).minute
-        GD_new[5, 0] = (GD_np.astype(object).second +
-                        (GD_np.astype(object).microsecond * 1e-6))
-        JD_deltas[i] = (gregorian2julian_date(GD_new))
-
-
-    converted_julian_date = (JD_UTC, JD_deltas[0], JD_deltas[1], JD_deltas[2])
-    return converted_julian_date
+        # Handling outputs if only one gregorian date is supplied
+        if entries == 1:
+            deltad = increment_gregorian_date(gregorian_date, deltas)
+            julian_d_conv = np.array([julian_date_UTC, 0, 0, 0])
+            for j in range(deltas.size):
+                julian_d_conv[j + 1] = (gregorian2julian_date(deltad[0][j]))
+        else:
+            deltad = increment_gregorian_date(gregorian_date[i, :], deltas)
+            julian_d_conv = np.array([julian_date_UTC, 0, 0, 0])
+            for j in range(deltas.size):
+                julian_d_conv[j + 1] = (gregorian2julian_date(deltad[0][j]))
+        julian_date_conv.append(julian_d_conv)
+    return tuple(julian_date_conv)
 
 
 
