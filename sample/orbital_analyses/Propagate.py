@@ -2,11 +2,11 @@
 import numpy as np
 from sample.orbital_analyses import u
 from copy import deepcopy as dc
-from datetime import datetime, timedelta
 import sample.Requirements as Req
 import sample.constants as const
 
 from sample.orbital_analyses.Transform_State import gregorian2julian_date
+from sample.orbital_analyses.Transform_State import increment_gregorian_date
 from sample.orbital_analyses.Transform_Coordinate import IAU_2000Reduction
 
 # TODO: Remove this section
@@ -406,27 +406,8 @@ def gauss_jackson_prop(r0, v0, Epoch_GD0, step_size, steps, max_iterations=50, a
         frame.append('J2000eq')
         #######################################################################
         # Calculate gregorian date at new step and store in output array
-        t_ms = np.zeros(7, dtype=float)
-        t_ms[0:5] = GD_temp[0:5]
-        t_ms[5] = np.floor(GD_temp[5])  # Seconds
-        t_ms[6] = (np.mod(GD_temp[5], 1) * 1e6)  # Milliseconds
-        t_ms = t_ms.astype(int)
-        GD_dt = datetime(t_ms[0], t_ms[1], t_ms[2], t_ms[3],
-                         t_ms[4], t_ms[5], t_ms[6])  # To datetime
-        # Using h, add appropriate amount of time and calculate new date
-        GD_add = timedelta(seconds=h)
-        GD_stepped = GD_dt + GD_add
-        # Convert back to numpy array and store
-        GD_np = np.datetime64(GD_stepped)
-        GD_new = np.zeros(6, dtype=float)
-        GD_new[0] = GD_np.astype(object).year
-        GD_new[1] = GD_np.astype(object).month
-        GD_new[2] = GD_np.astype(object).day
-        GD_new[3] = GD_np.astype(object).hour
-        GD_new[4] = GD_np.astype(object).minute
-        GD_new[5] = (GD_np.astype(object).second +
-                     (GD_np.astype(object).microsecond * 1e-6))
-        GD[s, :] = GD_new
+        gregorian_date = dc(GD_temp)
+        GD[s, :] = increment_gregorian_date(gregorian_date, h)[0][0]
         GD_temp = GD[s, :]
 
     # Outputs - Save all dictionary entries into tuple

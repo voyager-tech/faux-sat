@@ -86,7 +86,7 @@ ex_GS = np.matrix([[ex_gs_ll], [ex_gs_a]])
 
 # Target Requirements
 # Define path that encircles california through lat/lon coordinates
-Target = np.load('orbital_analyses/CA_Coords.npy')
+Target = np.load("sample/orbital_analyses/CA_Coords.npy")
 
 # Subsystem Requirements
 ###############################################################################

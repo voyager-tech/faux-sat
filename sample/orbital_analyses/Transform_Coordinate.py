@@ -8,7 +8,7 @@ from bs4 import BeautifulSoup
 import re
 
 from sample.orbital_analyses.Transform_State import convert_time
-from sample.orbital_analyses.Transform_State import JD2Gregorian
+from sample.orbital_analyses.Transform_State import julian2gregorian_date
 from sample.orbital_analyses.Transform_State import gregorian2julian_date
 
 # ********************** Coordinate Reference Sheet **********************
@@ -472,7 +472,7 @@ def IAU_PrecessionNutation(rad_cirs, vel_cirs, gd_UTC, Transpose):
     # Time Adjustments
     jd_UTC, jd_UT1, jd_TAI, jd_TT = convert_time(gd_UTC)
     T_TT = np.linalg.norm((jd_TT - 2451545.0) / 36525)
-    gd_TT = JD2Gregorian(jd_TT)
+    gd_TT = gregorian2julian_date(jd_TT)
     # Initial time for TDB determination
     t_ms = np.asmatrix(np.zeros((7, 1), dtype=np.float64))
     t_ms[0:5, 0] = gd_TT[0:5, 0]
@@ -1373,7 +1373,7 @@ def FK5_PolarMotion_T(rad, vel, gd_UTC):
     # Time Adjustments
     jd_UTC, jd_UT1, jd_TAI, jd_TT = convert_time(gd_UTC)
     # Need to use to determine constnts below from site at specific times
-    # Call JD2Gregorian one you can read the below site
+    # Call gregorian2julian_date one you can read the below site
 
     # These from IERS Earth Orientation Data - EOP 14 C04 (IAU2000A) - Latest
     # https://datacenter.iers.org/eop/-/somos/5Rgv/latest/223
