@@ -9,6 +9,12 @@ from sample.orbital_analyses import u  # Pint Units
 # TODO: Find a good way to represent data in system (Classes?)
 # TODO: Determine default values for as many points as possible
 
+# %% System Filepaths
+# Set the path to faux-sat folder in the variable faux_path (Include faux-sat)
+# Example: faux_path = r'\Users\Harley\Documents\faux-sat'
+# Be sure to include "r'\'" before first directory
+faux_path = r'\Users\Harley\Documents\faux-sat'
+
 # %% Initial Orbital Values
 # TODO: Convert all to rad, vel in km and km/sec in the inertial frame
 radius_i = np.array([[],      # i component of radius vector
@@ -55,10 +61,10 @@ local_time = [np.array([[],   # Year
 # %% Spacecraft Attitude
 # includes rate of change if not already included in quaternions
 # TODO: Convert to quaternions
-quaternion = np.array([[qs],
-                       [qx],
-                       [qy],
-                       [qz]])
+quaternion = np.array([[],
+                       [],
+                       [],
+                       []])
 
 
 # %% Propagator
