@@ -4,6 +4,7 @@ from sample.orbital_analyses import u
 from copy import deepcopy as dc
 import sample.Requirements as Req
 import sample.constants as const
+from sample.initialize import faux_path
 
 from sample.orbital_analyses.Transform_State import gregorian2julian_date
 from sample.orbital_analyses.Transform_State import increment_gregorian_date
@@ -197,6 +198,7 @@ def gauss_jackson_prop(r0, v0, Epoch_GD0, step_size, steps, max_iterations=50, a
 # %% # TODO: Remove Later######################################################
     # 2. Evaluate 9 acceeration vectors for the 9 states determined above
     # Acceleration w/o any perturbations
+    # Pg. 592
     def evaluate_accel(rad, vel, bodies, J2=0, drag=0, three_body=0, srp=0):
         # TODO: Docstring here
         # TODO: make sure user has entered 1s or 0s for each option
@@ -252,8 +254,8 @@ def gauss_jackson_prop(r0, v0, Epoch_GD0, step_size, steps, max_iterations=50, a
     # 3. Converging the accelerations
     # Import all coefficient arrays
     # Eigth order summed adams coefficients in Ordinate Form: a(j,k), b(j,k)
-    a = np.load(r'orbital_analyses\coefficient_matrices\gauss_jackson_prop\GJ_a_coeff.npy')
-    b = np.load(r'orbital_analyses\coefficient_matrices\gauss_jackson_prop\GJ_b_coeff.npy')
+    a = np.load(faux_path + r'\sample\raw_data\gauss_jackson_prop\GJ_a_coeff.npy')
+    b = np.load(faux_path + r'\sample\raw_data\gauss_jackson_prop\GJ_b_coeff.npy')
     # Initialize all loop arrays and variables before loop
     acc_temp1 = np.zeros((9, 3), dtype=float)
     diff_acc = 1
@@ -407,7 +409,8 @@ def gauss_jackson_prop(r0, v0, Epoch_GD0, step_size, steps, max_iterations=50, a
         #######################################################################
         # Calculate gregorian date at new step and store in output array
         gregorian_date = dc(GD_temp)
-        GD[s, :] = increment_gregorian_date(gregorian_date, h)[0][0]
+        # TODO: Determine how to pull base array out without using [0][0]
+        GD[s, :] = increment_gregorian_date(gregorian_date, h)[0]
         GD_temp = GD[s, :]
 
     # Outputs - Save all dictionary entries into tuple
